@@ -1,4 +1,5 @@
 import { text } from "d3-fetch";
+
 import {
     type VariableRecord,
     type SliceRecord,
@@ -6,7 +7,7 @@ import {
     type JSONLHeaderField,
     type JSONLHeader,
     type JSONLFeatureRecord,
-} from "./types/parse";
+} from "../types/parse";
 
 /**
  * Parses slice data from the ANCOMBC2 output format that resides inside of the
@@ -25,10 +26,12 @@ function parseAllSlices(slicesDir: string): FeatureRecord[] {
 }
 
 /**
+ * Parses a JSONL slice into an array of feature records.
  *
- *
+ * @param {string} slice - The filepath of the slice file to parse.
+ * @returns {Promise<FeatureRecord[]>} The parsed feature records.
  */
-async function parseSlice(slice: string): Promise<FeatureRecord[]> {
+export async function parseSlice(slice: string): Promise<FeatureRecord[]> {
     // open file, convert to json
     const textData: string = await text(slice);
     const jsonRecords: any = textData
@@ -47,17 +50,12 @@ async function parseSlice(slice: string): Promise<FeatureRecord[]> {
     const header: JSONLHeader = jsonRecords.shift()!;
 
     // parse each remaining line into a feature record
-    const jsonFeatureRecords: JSONLFeatureRecord = jsonRecords;
+    const jsonFeatureRecords: JSONLFeatureRecord[] = jsonRecords;
+    const sliceName = slice.split("/").pop()!.replace(".jsonl", "");
 
-    const sliceName = slice.replace(".jsonl", "");
-
-    let featureRecords: FeatureRecord[] = [];
-    for (let jsonRecord of jsonRecords) {
-        featureRecords.push(featureRecord);
-    }
-    return [];
-
-    // return
+    return jsonFeatureRecords.map((record) =>
+        parseFeatureRecord(record, header, sliceName),
+    );
 }
 
 /**

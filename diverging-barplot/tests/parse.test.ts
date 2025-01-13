@@ -1,10 +1,19 @@
-import { describe, test, assert, expect } from "vitest";
+import { vi, describe, test, assert } from "vitest";
 import { readFileSync } from "fs";
 import {
     getColumnField,
     isCategoricalColumn,
     parseFeatureRecord,
+    parseSlice,
 } from "../src/util/parse";
+
+// mock d3.text
+async function mockedText(slice: string): Promise<string> {
+    return readFileSync(slice, "utf-8");
+}
+vi.mock("d3-fetch", () => {
+    return { text: vi.fn(mockedText) };
+});
 
 describe("getColumnField()", () => {
     const lfcText = readFileSync("tests/data/output-format/lfc.jsonl", "utf-8");
@@ -113,5 +122,26 @@ describe("parseFeatureRecord()", () => {
             name: "year",
             value: 189.6871124062,
         });
+    });
+});
+
+describe("parseSlice()", async () => {
+    const sliceFilepath = "tests/data/output-format/lfc.jsonl";
+    const obs = await parseSlice(sliceFilepath);
+
+    test("correct number of features", () => {
+        assert.equal(obs.length, 8);
+    });
+
+    test("correct number of slices", () => {
+        const numSlices = obs.map(
+            (record) => Object.keys(record.slices).length,
+        );
+        assert.sameMembers([...new Set(numSlices)], [1]);
+    });
+
+    test("correct slice names", () => {
+        const sliceNames = obs.map((record) => Object.keys(record.slices)[0]);
+        assert.sameMembers([...new Set(sliceNames)], ["lfc"]);
     });
 });
