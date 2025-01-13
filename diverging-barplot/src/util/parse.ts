@@ -1,33 +1,12 @@
 import { text } from "d3-fetch";
-
-type VariableRecord = {
-    name: string;
-    value: number | boolean;
-    level?: string;
-    reference?: string;
-};
-type SliceRecord = {
-    variables: VariableRecord[];
-};
-type FeatureRecord = {
-    featureId: string;
-    slices: { [key: string]: SliceRecord };
-};
-
-type JSONLHeaderField = {
-    name: string;
-    type: string | null;
-    missing: boolean;
-    title: string;
-    description: string;
-    extra: { [key: string]: any };
-};
-type JSONLHeader = {
-    doctype: object;
-    direction: string;
-    style: string;
-    fields: JSONLHeaderField[];
-};
+import {
+    type VariableRecord,
+    type SliceRecord,
+    type FeatureRecord,
+    type JSONLHeaderField,
+    type JSONLHeader,
+    type JSONLFeatureRecord,
+} from "./types/parse";
 
 /**
  * Parses slice data from the ANCOMBC2 output format that resides inside of the
@@ -52,51 +31,83 @@ function parseAllSlices(slicesDir: string): FeatureRecord[] {
 async function parseSlice(slice: string): Promise<FeatureRecord[]> {
     // open file, convert to json
     const textData: string = await text(slice);
-    const textRecords: string[] = textData
+    const jsonRecords: any = textData
         .split("\n")
-        .filter((line) => line.trim() != "");
+        .filter((line) => line.trim() != "")
+        .map((line) => JSON.parse(line));
 
-    const jsonRecords: any[] = textRecords.map((line) => JSON.parse(line));
-
-    // parse header, check if empty
-    const header: JSONLHeader | undefined = jsonRecords.shift();
-    if (header === undefined) {
+    // parse header and check if empty
+    if (jsonRecords.length < 1) {
         const msg = `The ${slice} slice is empty.`;
         throw new Error(msg);
+    } else if (jsonRecords.length === 1) {
+        const msg = `The ${slice} slice has a header but no records.`;
+        throw new Error(msg);
     }
+    const header: JSONLHeader = jsonRecords.shift()!;
+
+    // parse each remaining line into a feature record
+    const jsonFeatureRecords: JSONLFeatureRecord = jsonRecords;
 
     const sliceName = slice.replace(".jsonl", "");
+
     let featureRecords: FeatureRecord[] = [];
     for (let jsonRecord of jsonRecords) {
-        let sliceRecord: SliceRecord = {
-            variables: [],
-        };
-        let featureRecord: FeatureRecord = {
-            featureId: jsonRecord.taxon,
-            slices: { sliceName: sliceRecord },
-        };
-
-        for (let columnName of Object.keys(jsonRecord)) {
-            if (columnName === "taxon") continue;
-
-            // if already seen categorical variable add level
-            if (isCategoricalColumn(columnName, header)) {
-            }
-
-            // if new categorical or numerical variable add new var record
-
-            let variableRecord = {
-                name: columnName,
-                value: jsonRecord.columnName,
-            };
-            sliceRecord.variables.push(variableRecord);
-        }
-
         featureRecords.push(featureRecord);
     }
     return [];
 
     // return
+}
+
+/**
+ * Parses a feature record from a JSONL slice into a more structured
+ * representation.
+ *
+ * @param {JSONLFeatureRecord} jsonRecord - A record from a JSONL slice
+ * corresponding to one line in the JSONL file.
+ * @param {JSONLHeader} header - A header from a JSONL slice.
+ * @param {string} sliceName - The name of the JSONL slice being parsed.
+ * @returns {FeatureRecord} The parsed record.
+ */
+export function parseFeatureRecord(
+    jsonRecord: JSONLFeatureRecord,
+    header: JSONLHeader,
+    sliceName: string,
+): FeatureRecord {
+    // intialize feature and slice records
+    let sliceRecord: SliceRecord = {
+        variables: [],
+    };
+    let featureRecord: FeatureRecord = {
+        featureId: jsonRecord.taxon,
+        slices: { [sliceName]: sliceRecord },
+    };
+
+    // parse JSONL column entries into variable records
+    for (let columnName of Object.keys(jsonRecord)) {
+        if (columnName === "taxon") continue;
+
+        if (isCategoricalColumn(columnName, header)) {
+            const headerField = getColumnField(columnName, header);
+
+            const categoricalVarRecord: VariableRecord = {
+                name: headerField.extra.variable,
+                value: jsonRecord[columnName],
+                level: headerField.extra.level,
+                reference: headerField.extra.reference,
+            };
+            sliceRecord.variables.push(categoricalVarRecord);
+        } else {
+            const numericalVarRecord: VariableRecord = {
+                name: columnName,
+                value: jsonRecord[columnName],
+            };
+            sliceRecord.variables.push(numericalVarRecord);
+        }
+    }
+
+    return featureRecord;
 }
 
 /**
