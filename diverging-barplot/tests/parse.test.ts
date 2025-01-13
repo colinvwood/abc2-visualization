@@ -1,25 +1,56 @@
 import { describe, test, expect } from "vitest";
 import { readFileSync, readdirSync } from "fs";
-import { isCategoricalColumn } from "../src/util/parse.ts";
+import { getColumnField, isCategoricalColumn } from "../src/util/parse.ts";
+
+describe("getColumnField()", () => {
+    const lfcText = readFileSync("tests/data/output-format/lfc.jsonl", "utf-8");
+    const header = JSON.parse(lfcText.split("\n")[0]);
+
+    test("column name is present", () => {
+        const column = "body-site::left palm";
+        const exp = {
+            name: "body-site::left palm",
+            type: null,
+            missing: false,
+            title: "",
+            description: "",
+            extra: {
+                variable: "body-site",
+                level: "left palm",
+                reference: "gut",
+            },
+        };
+
+        expect(getColumnField(column, header)).toEqual(exp);
+    });
+
+    test("column name not present", () => {
+        const column = "waldo";
+
+        expect(() => getColumnField(column, header)).toThrowError(
+            "Column waldo not found in JSONL header.",
+        );
+    });
+});
 
 describe("isCategoricalColumn()", () => {
     const lfcText = readFileSync("tests/data/output-format/lfc.jsonl", "utf-8");
-    const headerRecord = JSON.parse(lfcText.split("\n")[0]);
+    const header = JSON.parse(lfcText.split("\n")[0]);
 
     test("categorical column correctly identified", () => {
-        let columnName = "body-site::left palm";
-        expect(isCategoricalColumn(columnName, headerRecord)).toBe(true);
+        const column = "body-site::left palm";
+        expect(isCategoricalColumn(column, header)).toBe(true);
     });
 
     test("numerical column not identified as categorical", () => {
-        let columnName = "year";
-        expect(isCategoricalColumn(columnName, headerRecord)).toBe(false);
+        const column = "year";
+        expect(isCategoricalColumn(column, header)).toBe(false);
     });
 
     test("nonexistent column errors", () => {
-        let columnName = "waldo";
-        expect(async () =>
-            isCategoricalColumn(columnName, headerRecord),
-        ).rejects.toThrow("Column waldo not found in JSONL header.");
+        const column = "waldo";
+        expect(() => isCategoricalColumn(column, header)).toThrowError(
+            "Column waldo not found in JSONL header.",
+        );
     });
 });

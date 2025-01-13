@@ -78,6 +78,13 @@ async function parseSlice(slice: string): Promise<FeatureRecord[]> {
 
         for (let columnName of Object.keys(jsonRecord)) {
             if (columnName === "taxon") continue;
+
+            // if already seen categorical variable add level
+            if (isCategoricalColumn(columnName, header)) {
+            }
+
+            // if new categorical or numerical variable add new var record
+
             let variableRecord = {
                 name: columnName,
                 value: jsonRecord.columnName,
@@ -93,30 +100,43 @@ async function parseSlice(slice: string): Promise<FeatureRecord[]> {
 }
 
 /**
- * Checks whether a column is annotated as categorical in its slice header.
+ * Retrieves the header field entry for a column name.
  *
- * @param columnName {string} - The name of the column to check.
- * @param header {JSONLHeader} - The header from the JSONL slice.
- *
- * @returns {boolean} - Whether the column refers to a categorical variable.
+ * @param column {string} The name of the column of interest.
+ * @param header {JSONLHeader} A header from a JSONL slice.
+ * @returns {JSONLHeaderField} The header field entry for `column`.
  */
-export function isCategoricalColumn(
-    columnName: string,
+export function getColumnField(
+    column: string,
     header: JSONLHeader,
-): boolean {
+): JSONLHeaderField {
     const columnFields: JSONLHeaderField[] = header.fields.filter((field) => {
-        return field.name === columnName;
+        return field.name === column;
     });
 
     if (columnFields.length > 1) {
-        const msg = `Duplicate name '${columnName}' found in JSONL header.`;
+        const msg = `Duplicate name '${column}' found in JSONL header.`;
         throw new Error(msg);
     } else if (!columnFields.length) {
-        const msg = `Column ${columnName} not found in JSONL header.`;
+        const msg = `Column ${column} not found in JSONL header.`;
         throw new Error(msg);
     }
 
-    const columnField: JSONLHeaderField = columnFields.shift()!;
+    return columnFields.shift()!;
+}
+
+/**
+ * Checks whether a column is annotated as categorical in its slice header.
+ *
+ * @param column {string} The name of the column to check.
+ * @param header {JSONLHeader} A header from a JSONL slice.
+ * @returns {boolean} Whether the column refers to a categorical variable.
+ */
+export function isCategoricalColumn(
+    column: string,
+    header: JSONLHeader,
+): boolean {
+    const columnField: JSONLHeaderField = getColumnField(column, header);
 
     return Object.hasOwn(columnField.extra, "reference");
 }
