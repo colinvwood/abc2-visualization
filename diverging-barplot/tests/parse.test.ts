@@ -5,6 +5,7 @@ import {
     isCategoricalColumn,
     parseFeatureRecord,
     parseSlice,
+    parseAllSlices,
 } from "../src/util/parse";
 
 // mock d3.text
@@ -127,21 +128,58 @@ describe("parseFeatureRecord()", () => {
 
 describe("parseSlice()", async () => {
     const sliceFilepath = "tests/data/output-format/lfc.jsonl";
-    const obs = await parseSlice(sliceFilepath);
+    const records = await parseSlice(sliceFilepath);
 
     test("correct number of features", () => {
-        assert.equal(obs.length, 8);
+        assert.equal(records.length, 8);
     });
 
     test("correct number of slices", () => {
-        const numSlices = obs.map(
+        const numSlices = records.map(
             (record) => Object.keys(record.slices).length,
         );
         assert.sameMembers([...new Set(numSlices)], [1]);
     });
 
     test("correct slice names", () => {
-        const sliceNames = obs.map((record) => Object.keys(record.slices)[0]);
+        const sliceNames = records.map(
+            (record) => Object.keys(record.slices)[0],
+        );
         assert.sameMembers([...new Set(sliceNames)], ["lfc"]);
+    });
+});
+
+describe("parseAllSlices()", async () => {
+    const sliceDirPath = "tests/data/output-format";
+    const records = await parseAllSlices(sliceDirPath);
+
+    test("correct number of features", () => {
+        assert.equal(records.length, 8);
+    });
+
+    test("correct number of slices", () => {
+        const numSlices = records.map(
+            (record) => Object.keys(record.slices).length,
+        );
+        assert.sameMembers([...new Set(numSlices)], [7]);
+    });
+
+    test("structure and contents for arbitrary feature", () => {
+        const id = "1d2e5f3444ca750c85302ceee2473331";
+        const record = records.find((record) => record.featureId == id);
+
+        assert.equal(record!.slices.lfc.variables.length, 5);
+
+        const yearVariableLfc = record!.slices.lfc.variables.find(
+            (v) => v.name == "year",
+        );
+        assert.equal(yearVariableLfc!.value, 155.3791414063);
+        assert.notProperty(yearVariableLfc, "reference");
+
+        const bodySiteTongueP = record!.slices.p.variables.find(
+            (v) => v.name == "body-site" && v.level == "tongue",
+        );
+        assert.equal(bodySiteTongueP!.value, 0.001582484);
+        assert.property(bodySiteTongueP, "reference");
     });
 });

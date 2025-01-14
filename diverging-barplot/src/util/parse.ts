@@ -16,13 +16,33 @@ import {
  * @param {string} slicesDir - The name of the directory containing the slices.
  * @returns {FeatureRecord[]} An array of feature records.
  */
-function parseAllSlices(slicesDir: string): FeatureRecord[] {
-    // call parseSlice on each file
+export async function parseAllSlices(
+    slicesDir: string,
+): Promise<FeatureRecord[]> {
+    const slices = new Set(["diff", "lfc", "p", "passed_ss", "q", "se", "W"]);
 
-    // accumulate/combine outputs from parseSlice
+    let featureRecordsMap: Record<string, FeatureRecord> = {};
+    for (let slice of slices) {
+        const sliceFilepath = `${slicesDir}/${slice}.jsonl`;
+        let sliceFeatureRecords = await parseSlice(sliceFilepath);
 
-    // return
-    return [];
+        const sliceName = Object.keys(sliceFeatureRecords[0].slices)[0];
+        for (let record of sliceFeatureRecords) {
+            // merge slices if feature already parsed in another slice
+            if (Object.hasOwn(featureRecordsMap, record.featureId)) {
+                featureRecordsMap[record.featureId].slices = {
+                    ...featureRecordsMap[record.featureId].slices,
+                    ...record.slices,
+                };
+            }
+            // otherwise create new feature record
+            else {
+                featureRecordsMap[record.featureId] = record;
+            }
+        }
+    }
+
+    return Object.values(featureRecordsMap);
 }
 
 /**
