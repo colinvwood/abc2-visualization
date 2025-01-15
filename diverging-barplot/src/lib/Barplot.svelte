@@ -1,9 +1,5 @@
 <script lang="ts">
 </script>
 
-<div>
-    <p>Barplot here</p>
-</div>
-
 <style>
 </style>

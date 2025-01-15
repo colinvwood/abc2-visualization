@@ -19,7 +19,7 @@ import {
 export async function parseAllSlices(
     slicesDir: string,
 ): Promise<FeatureRecord[]> {
-    const slices = new Set(["diff", "lfc", "p", "passed_ss", "q", "se", "W"]);
+    const slices = ["diff", "lfc", "p", "passed_ss", "q", "se", "W"];
 
     let featureRecordsMap: Record<string, FeatureRecord> = {};
     for (let slice of slices) {
