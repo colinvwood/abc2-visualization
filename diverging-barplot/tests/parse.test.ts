@@ -1,9 +1,9 @@
 import { vi, describe, test, assert } from "vitest";
 import { readFileSync } from "fs";
+import { FeatureRecord, FeatureRecords } from "../src/models/featureRecord";
 import {
     getColumnField,
-    isCategoricalColumn,
-    parseFeatureRecord,
+    parseJSONLFeatureRecord,
     parseSlice,
     parseAllSlices,
 } from "../src/util/parse";
@@ -48,30 +48,7 @@ describe("getColumnField()", () => {
     });
 });
 
-describe("isCategoricalColumn()", () => {
-    const lfcText = readFileSync("tests/data/output-format/lfc.jsonl", "utf-8");
-    const header = JSON.parse(lfcText.split("\n")[0]);
-
-    test("categorical column correctly identified", () => {
-        const column = "body-site::left palm";
-        assert.isTrue(isCategoricalColumn(column, header));
-    });
-
-    test("numerical column not identified as categorical", () => {
-        const column = "year";
-        assert.isFalse(isCategoricalColumn(column, header));
-    });
-
-    test("nonexistent column errors", () => {
-        const column = "waldo";
-        assert.throws(
-            () => isCategoricalColumn(column, header),
-            "Column waldo not found in JSONL header.",
-        );
-    });
-});
-
-describe("parseFeatureRecord()", () => {
+describe("parseJSONLFeatureRecord()", () => {
     const lfcText = readFileSync("tests/data/output-format/lfc.jsonl", "utf-8");
     const jsonRecords = lfcText
         .split("\n")
@@ -82,24 +59,20 @@ describe("parseFeatureRecord()", () => {
     const jsonRecord = jsonRecords[1];
     const sliceName = "lfc";
 
-    const obs = parseFeatureRecord(jsonRecord, header, sliceName);
+    const obs = parseJSONLFeatureRecord(jsonRecord, header, sliceName);
 
     test("parses feature id", () => {
         assert.equal(obs.featureId, "4b5eeb300368260019c1fbc7a3c718fc");
     });
 
-    test("parses into one slice record", () => {
-        assert.equal(Object.keys(obs.slices).length, 1);
-        assert.property(obs.slices, "lfc");
-    });
-
     test("parses correct number of variables", () => {
-        assert.equal(obs.slices.lfc.variables.length, 5);
+        assert.equal(obs.variables.size, 5);
     });
 
     test("parses categorical columns", () => {
-        const bodySiteVariables = obs.slices.lfc.variables.filter(
-            (v) => v.name === "body-site",
+        const variables = Array.from(obs.variables.values());
+        const bodySiteVariables = variables.filter(
+            (v) => v.name == "body-site",
         );
         assert.equal(bodySiteVariables.length, 3);
 
@@ -111,75 +84,84 @@ describe("parseFeatureRecord()", () => {
     });
 
     test("parses numerical columns", () => {
-        const nonCategoricalVariables = obs.slices.lfc.variables.filter(
+        const variables = Array.from(obs.variables.values());
+        const nonCategoricalVariables = variables.filter(
             (v) => !Object.hasOwn(v, "reference"),
         );
         assert.equal(nonCategoricalVariables.length, 2);
 
-        const yearVariable = nonCategoricalVariables.filter(
-            (v) => v.name === "year",
-        )[0];
+        const yearVariable = nonCategoricalVariables.find(
+            (v) => v.name == "year",
+        );
         assert.deepEqual(yearVariable, {
             name: "year",
-            value: 189.6871124062,
+            lfc: 189.6871124062,
         });
     });
 });
 
 describe("parseSlice()", async () => {
     const sliceFilepath = "tests/data/output-format/lfc.jsonl";
-    const records = await parseSlice(sliceFilepath);
+    const featureRecords = new FeatureRecords();
+    await parseSlice(sliceFilepath, featureRecords);
 
     test("correct number of features", () => {
-        assert.equal(records.length, 8);
+        assert.equal(featureRecords.records.length, 8);
     });
 
-    test("correct number of slices", () => {
-        const numSlices = records.map(
-            (record) => Object.keys(record.slices).length,
+    test("slice parsed correctly", () => {
+        const feature = featureRecords.getFeature(
+            "fe30ff0f71a38a39cf1717ec2be3a2fc",
         );
-        assert.sameMembers([...new Set(numSlices)], [1]);
-    });
 
-    test("correct slice names", () => {
-        const sliceNames = records.map(
-            (record) => Object.keys(record.slices)[0],
+        assert.equal(
+            feature!.getVariableSlice("body-site", "lfc", "left palm"),
+            113.4173262332,
         );
-        assert.sameMembers([...new Set(sliceNames)], ["lfc"]);
+
+        assert.equal(feature!.getVariableSlice("year", "lfc"), 181.01108921);
+
+        const variable = feature!.getVariable("body-site", "right palm");
+        assert.isOk(variable!.lfc);
+        assert.isNotOk(variable!.q);
+        assert.isNotOk(variable!.p);
+        assert.isNotOk(variable!.se);
     });
 });
 
 describe("parseAllSlices()", async () => {
     const sliceDirPath = "tests/data/output-format";
-    const records = await parseAllSlices(sliceDirPath);
+    const featureRecords = await parseAllSlices(sliceDirPath);
 
     test("correct number of features", () => {
-        assert.equal(records.length, 8);
+        assert.equal(featureRecords.records.length, 8);
     });
 
-    test("correct number of slices", () => {
-        const numSlices = records.map(
-            (record) => Object.keys(record.slices).length,
-        );
-        assert.sameMembers([...new Set(numSlices)], [7]);
+    test("all slices parsed", () => {
+        for (let featureRecord of featureRecords.records) {
+            for (let variable of featureRecord.variables.values()) {
+                for (let prop of ["lfc", "se", "p", "q"]) {
+                    assert.property(variable, prop);
+                    assert.isDefined(variable[prop]);
+                }
+            }
+        }
     });
 
-    test("structure and contents for arbitrary feature", () => {
+    test("structure and contents of arbitrary feature", () => {
         const id = "1d2e5f3444ca750c85302ceee2473331";
-        const record = records.find((record) => record.featureId == id);
+        const feature = featureRecords.getFeature(id);
 
-        assert.equal(record!.slices.lfc.variables.length, 5);
-
-        const yearVariableLfc = record!.slices.lfc.variables.find(
-            (v) => v.name == "year",
+        assert.equal(
+            feature!.getVariableSlice("body-site", "lfc", "left palm"),
+            86.9453579935,
         );
-        assert.equal(yearVariableLfc!.value, 155.3791414063);
-        assert.notProperty(yearVariableLfc, "reference");
 
-        const bodySiteTongueP = record!.slices.p.variables.find(
-            (v) => v.name == "body-site" && v.level == "tongue",
+        assert.equal(feature!.getVariableSlice("year", "se"), 0.0030650395);
+
+        assert.property(
+            feature!.getVariable("body-site", "tongue"),
+            "reference",
         );
-        assert.equal(bodySiteTongueP!.value, 0.001582484);
-        assert.property(bodySiteTongueP, "reference");
     });
 });

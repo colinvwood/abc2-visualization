@@ -1,59 +1,56 @@
 import { text } from "d3-fetch";
 
 import {
+    FeatureRecords,
+    FeatureRecord,
     type VariableRecord,
-    type SliceRecord,
-    type FeatureRecord,
-    type JSONLHeaderField,
-    type JSONLHeader,
-    type JSONLFeatureRecord,
-} from "../types/parse";
+} from "../models/featureRecord";
+
+type JSONLHeaderField = {
+    name: string;
+    type: string | null;
+    missing: boolean;
+    title: string;
+    description: string;
+    extra: Record<string, any>;
+};
+type JSONLHeader = {
+    doctype: object;
+    direction: string;
+    style: string;
+    fields: JSONLHeaderField[];
+};
+type JSONLFeatureRecord = {
+    taxon: string;
+} & Record<string, number>;
 
 /**
  * Parses slice data from the ANCOMBC2 output format that resides inside of the
  * visualization artifact.
- *
- * @param {string} slicesDir - The name of the directory containing the slices.
- * @returns {FeatureRecord[]} An array of feature records.
  */
 export async function parseAllSlices(
     slicesDir: string,
-): Promise<FeatureRecord[]> {
-    const slices = ["diff", "lfc", "p", "passed_ss", "q", "se", "W"];
+): Promise<FeatureRecords> {
+    const featureRecords = new FeatureRecords();
 
-    let featureRecordsMap: Record<string, FeatureRecord> = {};
+    const slices = ["lfc", "p", "q", "se"];
     for (let slice of slices) {
         const sliceFilepath = `${slicesDir}/${slice}.jsonl`;
-        let sliceFeatureRecords = await parseSlice(sliceFilepath);
-
-        const sliceName = Object.keys(sliceFeatureRecords[0].slices)[0];
-        for (let record of sliceFeatureRecords) {
-            // merge slices if feature already parsed in another slice
-            if (Object.hasOwn(featureRecordsMap, record.featureId)) {
-                featureRecordsMap[record.featureId].slices = {
-                    ...featureRecordsMap[record.featureId].slices,
-                    ...record.slices,
-                };
-            }
-            // otherwise create new feature record
-            else {
-                featureRecordsMap[record.featureId] = record;
-            }
-        }
+        await parseSlice(sliceFilepath, featureRecords);
     }
 
-    return Object.values(featureRecordsMap);
+    return featureRecords;
 }
 
 /**
- * Parses a JSONL slice into an array of feature records.
- *
- * @param {string} slice - The filepath of the slice file to parse.
- * @returns {Promise<FeatureRecord[]>} The parsed feature records.
+ * Parses a JSONL slice into `FeatureRecord`s and adds them to `featureRecords`.
  */
-export async function parseSlice(slice: string): Promise<FeatureRecord[]> {
+export async function parseSlice(
+    sliceFilepath: string,
+    featureRecords: FeatureRecords,
+): Promise<undefined> {
     // open file, convert to json
-    const textData: string = await text(slice);
+    const textData: string = await text(sliceFilepath);
     const jsonRecords: any = textData
         .split("\n")
         .filter((line) => line.trim() != "")
@@ -61,79 +58,63 @@ export async function parseSlice(slice: string): Promise<FeatureRecord[]> {
 
     // parse header and check if empty
     if (jsonRecords.length < 1) {
-        const msg = `The ${slice} slice is empty.`;
+        const msg = `The ${sliceFilepath} slice is empty.`;
         throw new Error(msg);
     } else if (jsonRecords.length === 1) {
-        const msg = `The ${slice} slice has a header but no records.`;
+        const msg = `The ${sliceFilepath} slice has a header but no records.`;
         throw new Error(msg);
     }
     const header: JSONLHeader = jsonRecords.shift()!;
 
     // parse each remaining line into a feature record
     const jsonFeatureRecords: JSONLFeatureRecord[] = jsonRecords;
-    const sliceName = slice.split("/").pop()!.replace(".jsonl", "");
+    const sliceName = sliceFilepath.split("/").pop()!.replace(".jsonl", "");
 
-    return jsonFeatureRecords.map((record) =>
-        parseFeatureRecord(record, header, sliceName),
-    );
+    jsonFeatureRecords.forEach((record) => {
+        const feature = parseJSONLFeatureRecord(record, header, sliceName);
+        featureRecords.addFeature(feature);
+    });
 }
 
 /**
- * Parses a feature record from a JSONL slice into a more structured
- * representation.
- *
- * @param {JSONLFeatureRecord} jsonRecord - A record from a JSONL slice
- * corresponding to one line in the JSONL file.
- * @param {JSONLHeader} header - A header from a JSONL slice.
- * @param {string} sliceName - The name of the JSONL slice being parsed.
- * @returns {FeatureRecord} The parsed record.
+ * Parses a feature record line from a JSONL slice into a `FeatureRecord`
+ * object.
  */
-export function parseFeatureRecord(
+export function parseJSONLFeatureRecord(
     jsonRecord: JSONLFeatureRecord,
     header: JSONLHeader,
-    sliceName: string,
+    slice: string,
 ): FeatureRecord {
-    // intialize feature and slice records
-    let sliceRecord: SliceRecord = {
-        variables: [],
-    };
-    let featureRecord: FeatureRecord = {
-        featureId: jsonRecord.taxon,
-        slices: { [sliceName]: sliceRecord },
-    };
+    const featureRecord = new FeatureRecord(jsonRecord.taxon);
 
-    // parse JSONL column entries into variable records
-    for (let columnName of Object.keys(jsonRecord)) {
-        if (columnName === "taxon") continue;
+    for (let column of Object.keys(jsonRecord)) {
+        if (column == "taxon") continue;
 
-        if (isCategoricalColumn(columnName, header)) {
-            const headerField = getColumnField(columnName, header);
+        const value = jsonRecord[column];
 
-            const categoricalVarRecord: VariableRecord = {
-                name: headerField.extra.variable,
-                value: jsonRecord[columnName],
-                level: headerField.extra.level,
-                reference: headerField.extra.reference,
-            };
-            sliceRecord.variables.push(categoricalVarRecord);
+        const headerField = getColumnField(column, header);
+
+        let variable: VariableRecord;
+        if (headerField.extra.reference) {
+            variable = featureRecord.createVariable(
+                headerField.extra.variable,
+                slice,
+                value,
+                headerField.extra.level,
+                headerField.extra.reference,
+            );
         } else {
-            const numericalVarRecord: VariableRecord = {
-                name: columnName,
-                value: jsonRecord[columnName],
-            };
-            sliceRecord.variables.push(numericalVarRecord);
+            variable = featureRecord.createVariable(column, slice, value);
         }
+
+        featureRecord.addVariable(variable);
     }
 
     return featureRecord;
 }
 
 /**
- * Retrieves the header field entry for a column name.
- *
- * @param column {string} The name of the column of interest.
- * @param header {JSONLHeader} A header from a JSONL slice.
- * @returns {JSONLHeaderField} The header field entry for `column`.
+ * Retrieves the header field entry for the `column` column.
  */
 export function getColumnField(
     column: string,
@@ -152,20 +133,4 @@ export function getColumnField(
     }
 
     return columnFields.shift()!;
-}
-
-/**
- * Checks whether a column is annotated as categorical in its slice header.
- *
- * @param column {string} The name of the column to check.
- * @param header {JSONLHeader} A header from a JSONL slice.
- * @returns {boolean} Whether the column refers to a categorical variable.
- */
-export function isCategoricalColumn(
-    column: string,
-    header: JSONLHeader,
-): boolean {
-    const columnField: JSONLHeaderField = getColumnField(column, header);
-
-    return Object.hasOwn(columnField.extra, "reference");
 }

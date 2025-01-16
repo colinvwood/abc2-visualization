@@ -1,4 +1,7 @@
-import { type FeatureRecord, type VariableRecord } from "../types/parse";
+import {
+    type FeatureRecord,
+    type VariableRecord,
+} from "../models/featureRecord";
 
 type ViewRecord = {
     featureId: string;
