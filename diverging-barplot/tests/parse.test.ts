@@ -1,6 +1,6 @@
 import { vi, describe, test, assert } from "vitest";
 import { readFileSync } from "fs";
-import { FeatureRecord, FeatureRecords } from "../src/models/featureRecord";
+import { FeatureRecords } from "../src/state/features.svelte";
 import {
     getColumnField,
     parseJSONLFeatureRecord,

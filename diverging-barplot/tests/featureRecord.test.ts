@@ -1,5 +1,5 @@
 import { describe, test, assert } from "vitest";
-import { FeatureRecord, FeatureRecords } from "../src/models/featureRecord";
+import { FeatureRecord, FeatureRecords } from "../src/state/features.svelte";
 
 describe("FeatureRecord class", () => {
     const feature = new FeatureRecord("abc123");
@@ -72,6 +72,12 @@ describe("FeatureRecords class", () => {
         feature2.createVariable("body-site", "p", 0.05, "left palm", "gut"),
     );
     features.addFeature(feature2);
+
+    test("addFeature() matching feature", () => {
+        assert.equal(features.records.length, 1);
+
+        assert.equal(features.records[0].variables.size, 2);
+    });
 
     test("addFeature() merges features", () => {
         assert.equal(features.records.length, 1);

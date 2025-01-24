@@ -103,8 +103,22 @@ export class FeatureRecord {
     }
 }
 
+type ViewRecord = {
+    featureId: string;
+    lfc: number;
+    se: number;
+    p: number;
+    q: number;
+};
+
 export class FeatureRecords {
     records: FeatureRecord[] = [];
+
+    view = $state<ViewRecord[]>([]);
+    viewVariable = $state<string>("");
+    viewVariableLevel = $state<string | undefined>(undefined);
+
+    filters = $state<{ [key: number]: (r: FeatureRecord) => boolean }>({});
 
     /*
      * Return the feature with id `featureId`, or undefined if not found.
@@ -123,9 +137,81 @@ export class FeatureRecords {
         if (!matchingFeature) {
             this.records.push(feature);
         } else {
-            feature.variables
-                .values()
-                .forEach((v) => matchingFeature.addVariable(v));
+            Array.from(feature.variables.values()).forEach((v) =>
+                matchingFeature.addVariable(v),
+            );
         }
+    }
+
+    /**
+     * Adds a user-specified filter to the set of filters applied to the
+     * data.
+     */
+    addFilter(
+        index: number,
+        slice: string,
+        relationship: string,
+        value: number,
+    ): undefined {
+        const filter = (record: FeatureRecord) => {
+            const variableValue = record.getVariableSlice(
+                this.viewVariable,
+                slice,
+                this.viewVariableLevel,
+            );
+
+            if (relationship == "gt") return variableValue > value;
+            if (relationship == "ge") return variableValue >= value;
+            if (relationship == "lt") return variableValue < value;
+            if (relationship == "le") return variableValue <= value;
+
+            throw new Error(`Unexpected relationship ${relationship}.`);
+        };
+
+        this.filters[index] = filter;
+    }
+
+    /**
+     * Removes a filter by index.
+     */
+    removeFilter(index: number): undefined {
+        delete this.filters[index];
+    }
+
+    /**
+     * Renders the `view` by applying all existing filters and extracting the
+     * slice values for the current `viewVariable`.
+     */
+    render(): undefined {
+        // apply all filters
+        let filtered: FeatureRecord[] = this.records;
+        for (let f of Object.values(this.filters)) {
+            filtered = filtered.filter(f);
+        }
+
+        // map to view records by only selecting from variable of interest
+        let viewRecords: ViewRecord[] = filtered.map((record) => {
+            const variable = record.getVariable(
+                this.viewVariable,
+                this.viewVariableLevel,
+            );
+
+            if (!variable) {
+                throw new Error(
+                    `Could not find variable ${this.viewVariable}.`,
+                );
+            }
+
+            return {
+                featureId: record.featureId,
+                lfc: variable.lfc!,
+                se: variable.se!,
+                p: variable.p!,
+                q: variable.q!,
+            };
+        });
+
+        // update state
+        this.view = viewRecords;
     }
 }

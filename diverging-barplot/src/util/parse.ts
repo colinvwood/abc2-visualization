@@ -4,7 +4,7 @@ import {
     FeatureRecords,
     FeatureRecord,
     type VariableRecord,
-} from "../models/featureRecord";
+} from "../state/features.svelte";
 
 type JSONLHeaderField = {
     name: string;
