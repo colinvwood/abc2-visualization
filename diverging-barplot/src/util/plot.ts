@@ -104,6 +104,7 @@ export function drawPlot(
     // draw axes
     let xAxis = svg
         .append("g")
+        .attr("class", "x-axis")
         .attr(
             "transform",
             `translate(0, ${dimensions.margin + dimensions.plotHeight})`,
@@ -112,6 +113,7 @@ export function drawPlot(
 
     let yAxis = svg
         .append("g")
+        .attr("class", "y-axis")
         .attr("transform", `translate(${xScale(0)}, 0)`)
         .call(
             d3
@@ -124,8 +126,29 @@ export function drawPlot(
     svg.selectAll("rect")
         .data(features.view)
         .join("rect")
-        .attr("x", xScale(0))
-        .attr("y", (_, i) => yScale(String(i)))
+        .attr("x", (d) => (d.lfc > 0 ? xScale(0) : xScale(d.lfc)))
+        .attr("y", (d, i) => yScale(String(i)))
+        .attr("width", (d) => Math.abs(xScale(d.lfc) - xScale(0)))
+        .attr("height", yScale.bandwidth())
+        .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+}
+
+export function redrawPlot(
+    features: FeatureRecords,
+    barHeight: number,
+): undefined {
+    // get updated scales
+    const dimensions = getDimensions(features, barHeight);
+    const xScale = getXScale(features, dimensions);
+    const yScale = getYScale(features, dimensions);
+
+    d3.select("svg")
+        .selectAll("rect")
+        .data(features.view)
+        .transition()
+        .duration(500)
+        .attr("x", (d) => (d.lfc > 0 ? xScale(0) : xScale(d.lfc)))
+        .attr("y", (d, i) => yScale(String(i)))
         .attr("width", (d) => Math.abs(xScale(d.lfc) - xScale(0)))
         .attr("height", yScale.bandwidth())
         .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
