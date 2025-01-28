@@ -103,7 +103,7 @@ export class FeatureRecord {
     }
 }
 
-type ViewRecord = {
+export type ViewRecord = {
     featureId: string;
     lfc: number;
     se: number;
@@ -210,6 +210,8 @@ export class FeatureRecords {
                 q: variable.q!,
             };
         });
+
+        // sort view records by decreasing lfc
 
         // update state
         this.view = viewRecords;
