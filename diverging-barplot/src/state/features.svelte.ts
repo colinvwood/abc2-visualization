@@ -152,7 +152,7 @@ export class FeatureRecords {
         slice: string,
         relationship: string,
         value: number,
-    ): undefined {
+    ) {
         const filter = (record: FeatureRecord) => {
             const variableValue = record.getVariableSlice(
                 this.viewVariable,
@@ -174,15 +174,16 @@ export class FeatureRecords {
     /**
      * Removes a filter by index.
      */
-    removeFilter(index: number): undefined {
+    removeFilter(index: number) {
         delete this.filters[index];
     }
 
     /**
-     * Renders the `view` by applying all existing filters and extracting the
-     * slice values for the current `viewVariable`.
+     * Renders the `view` by applying all existing filters, sorting features
+     * by decreasing lfc value, and extracting the slice values for the current
+     * `viewVariable`.
      */
-    render(): undefined {
+    render() {
         // apply all filters
         let filtered: FeatureRecord[] = this.records;
         for (let f of Object.values(this.filters)) {
@@ -211,7 +212,11 @@ export class FeatureRecords {
             };
         });
 
+        // filter null lfc values
+        viewRecords = viewRecords.filter((r) => r.lfc != null);
+
         // sort view records by decreasing lfc
+        viewRecords = viewRecords.sort((r1, r2) => r2.lfc - r1.lfc);
 
         // update state
         this.view = viewRecords;

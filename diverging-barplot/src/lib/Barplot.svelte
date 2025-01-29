@@ -15,9 +15,9 @@
     });
 
     // rerender plot as needed
-    // $effect(() => {
-    //     plot.updatePlot(features);
-    // });
+    $effect(() => {
+        plot.updatePlot(features);
+    });
 
     const increaseBarThickness = () => {
         plot.dimensions.barHeight *= 1.05;
