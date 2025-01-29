@@ -10,146 +10,231 @@ type PlotDimensions = {
     barHeight: number;
 };
 
-/**
- */
-export function getDimensions(
-    features: FeatureRecords,
-    barHeight: number,
-): PlotDimensions {
-    const numFeatures = features.view.length;
-    const svgHeight = numFeatures * barHeight;
-    const svgWidth = 750;
-    const margin = 50;
+export class DivergingBarplot {
+    dimensions: PlotDimensions;
+    xScale: d3.ScaleLinear<number, number>;
+    yScale: d3.ScaleBand<any>;
+    xAxis: d3.Selection<any, any, any, any>;
+    yAxis: d3.Selection<any, any, any, any>;
 
-    return {
-        svgWidth,
-        svgHeight,
-        margin,
-        plotWidth: svgWidth - 2 * margin,
-        plotHeight: svgHeight - 2 * margin,
-        barHeight,
-    };
-}
+    constructor(features: FeatureRecords) {
+        this.dimensions = this.createDimensions(features);
+        this.xScale = this.createXScale(features);
+        this.yScale = this.createYScale(features);
+        this.xAxis = this.createXAxis(this.xScale);
+        this.yAxis = this.createYAxis(this.yScale);
 
-/**
- */
-function getXScale(
-    features: FeatureRecords,
-    dimensions: PlotDimensions,
-): d3.ScaleLinear<number, number> {
-    // get min and max lfc values
-    let [min, max] = d3.extent(features.view.map((f) => f.lfc));
-
-    if (!min || !max) {
-        throw new Error("Unable to find min/max of feature lfcs.");
+        this.drawPlot(features);
     }
 
-    // calculate scale range
-    const scaleMargin = 0.25;
-    if (min < 0) {
-        min = (1 + scaleMargin) * min;
-    } else {
-        min = -scaleMargin * max;
+    /**
+     */
+    createDimensions(features: FeatureRecords): PlotDimensions {
+        const numFeatures = features.view.length;
+        const barHeight = 45;
+        const svgHeight = numFeatures * barHeight;
+        const svgWidth = 750;
+        const margin = 50;
+
+        return {
+            svgWidth,
+            svgHeight,
+            margin,
+            plotWidth: svgWidth - 2 * margin,
+            plotHeight: svgHeight - 2 * margin,
+            barHeight,
+        };
     }
 
-    if (max > 0) {
-        max = (1 + scaleMargin) * max;
-    } else {
-        max = -scaleMargin * min;
+    /**
+     */
+    updatePlotHeight(features: FeatureRecords) {
+        this.dimensions.svgHeight =
+            features.view.length * this.dimensions.barHeight;
+        this.dimensions.plotHeight =
+            this.dimensions.svgHeight - 2 * this.dimensions.margin;
     }
 
-    const scale = d3
-        .scaleLinear()
-        .domain([min, max])
-        .range([dimensions.margin, dimensions.margin + dimensions.plotWidth]);
+    /**
+     */
+    getXDomain(features: FeatureRecords): [number, number] {
+        // get min and max lfc values
+        let [min, max] = d3.extent(features.view.map((f) => f.lfc));
 
-    return scale;
-}
+        if (!min || !max) {
+            throw new Error("Unable to find min/max of feature lfcs.");
+        }
 
-/**
- */
-function getYScale(
-    features: FeatureRecords,
-    dimensions: PlotDimensions,
-): d3.ScaleBand<string> {
-    const domain = d3.range(0, features.view.length).map((i) => String(i));
-    const padding = 0.2;
+        // calculate scale range
+        const scaleMargin = 0.25;
+        if (min < 0) {
+            min = (1 + scaleMargin) * min;
+        } else {
+            min = -scaleMargin * max;
+        }
 
-    const scale = d3
-        .scaleBand()
-        .domain(domain)
-        .range([dimensions.margin, dimensions.margin + dimensions.plotHeight])
-        .padding(padding);
+        if (max > 0) {
+            max = (1 + scaleMargin) * max;
+        } else {
+            max = -scaleMargin * min;
+        }
 
-    return scale;
-}
+        return [min, max];
+    }
 
-/**
- */
-export function drawPlot(
-    features: FeatureRecords,
-    barHeight: number,
-): undefined {
-    // get plot dimensions and scales
-    const dimensions = getDimensions(features, barHeight);
-    const xScale = getXScale(features, dimensions);
-    const yScale = getYScale(features, dimensions);
+    /**
+     */
+    getXRange() {
+        return [
+            this.dimensions.margin,
+            this.dimensions.margin + this.dimensions.plotWidth,
+        ];
+    }
 
-    // size svg
-    let svg = d3
-        .select("svg")
-        .attr("width", dimensions.svgWidth)
-        .attr("height", dimensions.svgHeight);
+    /**
+     */
+    createXScale(features: FeatureRecords): d3.ScaleLinear<number, number> {
+        const domain = this.getXDomain(features);
+        const range = this.getXRange();
+        const scale = d3.scaleLinear().domain(domain).range(range);
 
-    // draw axes
-    let xAxis = svg
-        .append("g")
-        .attr("class", "x-axis")
-        .attr(
-            "transform",
-            `translate(0, ${dimensions.margin + dimensions.plotHeight})`,
-        )
-        .call(d3.axisBottom(xScale));
+        return scale;
+    }
 
-    let yAxis = svg
-        .append("g")
-        .attr("class", "y-axis")
-        .attr("transform", `translate(${xScale(0)}, 0)`)
-        .call(
-            d3
-                .axisLeft(yScale)
-                .tickSize(0)
-                .tickFormat("" as any),
-        );
+    /**
+     */
+    getYDomain(features: FeatureRecords): string[] {
+        return d3.range(0, features.view.length).map((i) => String(i));
+    }
 
-    // draw bars
-    svg.selectAll("rect")
-        .data(features.view)
-        .join("rect")
-        .attr("x", (d) => (d.lfc > 0 ? xScale(0) : xScale(d.lfc)))
-        .attr("y", (d, i) => yScale(String(i)))
-        .attr("width", (d) => Math.abs(xScale(d.lfc) - xScale(0)))
-        .attr("height", yScale.bandwidth())
-        .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
-}
+    /**
+     */
+    getYRange() {
+        return [
+            this.dimensions.margin,
+            this.dimensions.margin + this.dimensions.plotHeight,
+        ];
+    }
 
-export function redrawPlot(
-    features: FeatureRecords,
-    barHeight: number,
-): undefined {
-    // get updated scales
-    const dimensions = getDimensions(features, barHeight);
-    const xScale = getXScale(features, dimensions);
-    const yScale = getYScale(features, dimensions);
+    /**
+     */
+    createYScale(features: FeatureRecords): d3.ScaleBand<any> {
+        const domain = this.getYDomain(features);
+        const range = this.getYRange();
+        const scale = d3.scaleBand().domain(domain).range(range).padding(0.2);
 
-    d3.select("svg")
-        .selectAll("rect")
-        .data(features.view)
-        .transition()
-        .duration(500)
-        .attr("x", (d) => (d.lfc > 0 ? xScale(0) : xScale(d.lfc)))
-        .attr("y", (d, i) => yScale(String(i)))
-        .attr("width", (d) => Math.abs(xScale(d.lfc) - xScale(0)))
-        .attr("height", yScale.bandwidth())
-        .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+        return scale;
+    }
+
+    /**
+     */
+    getXAxisTranslation() {
+        const translation = this.dimensions.margin + this.dimensions.plotHeight;
+        return `translate(0, ${translation})`;
+    }
+
+    /**
+     */
+    getYAxisTranslation() {
+        return `translate(${this.xScale(0)}, 0)`;
+    }
+
+    /**
+     */
+    createXAxis(
+        scale: d3.ScaleLinear<number, number>,
+    ): d3.Selection<any, any, any, any> {
+        let axis = d3
+            .select("svg")
+            .append("g")
+            .attr("class", "x-axis")
+            .attr("transform", this.getXAxisTranslation())
+            .call(d3.axisBottom(scale));
+
+        return axis;
+    }
+
+    /**
+     */
+    createYAxis(scale: d3.ScaleBand<any>): d3.Selection<any, any, any, any> {
+        let axis = d3
+            .select("svg")
+            .append("g")
+            .attr("class", "y-axis")
+            .attr("transform", this.getYAxisTranslation())
+            .call(
+                d3
+                    .axisLeft(this.yScale)
+                    .tickSize(0)
+                    .tickFormat("" as any),
+            );
+
+        return axis;
+    }
+
+    /**
+     */
+    drawPlot(features: FeatureRecords) {
+        // size svg
+        let svg = d3
+            .select("svg")
+            .attr("width", this.dimensions.svgWidth)
+            .attr("height", this.dimensions.svgHeight);
+
+        // draw bars
+        svg.selectAll("rect")
+            .data(features.view)
+            .join("rect")
+            .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
+            .attr("y", (d, i) => this.yScale(String(i)))
+            .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
+            .attr("height", this.yScale.bandwidth())
+            .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+    }
+
+    /**
+     */
+    updatePlot(features: FeatureRecords) {
+        // update plot height
+        this.updatePlotHeight(features);
+
+        // update scales
+        const xDomain = this.getXDomain(features);
+        const xRange = this.getXRange();
+        const yDomain = this.getYDomain(features);
+        const yRange = this.getYRange();
+
+        this.xScale.domain(xDomain).range(xRange);
+        this.yScale.domain(yDomain).range(yRange);
+
+        // transition axes
+        this.xAxis
+            .transition()
+            .duration(500)
+            .attr("transform", this.getXAxisTranslation())
+            .call(d3.axisBottom(this.xScale));
+
+        this.yAxis
+            .transition()
+            .duration(500)
+            .attr("transform", this.getYAxisTranslation())
+            .call(
+                d3
+                    .axisLeft(this.yScale)
+                    .tickSize(0)
+                    .tickFormat("" as any),
+            );
+
+        // transition bars
+        d3.select("svg")
+            .selectAll("rect")
+            .data(features.view)
+            .transition()
+            .duration(500)
+            .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
+            .attr("y", (d, i) => this.yScale(String(i)))
+            .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
+            .attr("height", this.yScale.bandwidth())
+            .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+    }
 }
