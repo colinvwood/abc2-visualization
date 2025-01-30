@@ -1,6 +1,6 @@
 <script lang="ts">
     import { parseAllSlices } from "./util/parse";
-    import BarplotContainer from "./lib/Barplot.svelte";
+    import BarplotContainer from "./lib/BarplotContainer.svelte";
 
     const slicesDirPath = "testing";
     const parsePromise = parseAllSlices(slicesDirPath);
@@ -13,6 +13,3 @@
 {:catch error}
     <p>An error occurred: {error.message}</p>
 {/await}
-
-<style>
-</style>

@@ -111,6 +111,13 @@ export type ViewRecord = {
     q: number;
 };
 
+type Filter = {
+    (record: FeatureRecord): boolean;
+    slice: string;
+    relationship: string;
+    value: number;
+};
+
 export class FeatureRecords {
     records: FeatureRecord[] = [];
 
@@ -118,7 +125,7 @@ export class FeatureRecords {
     viewVariable = $state<string>("");
     viewVariableLevel = $state<string | undefined>(undefined);
 
-    filters = $state<{ [key: number]: (r: FeatureRecord) => boolean }>({});
+    filters = $state<Filter[]>([]);
 
     /*
      * Return the feature with id `featureId`, or undefined if not found.
@@ -145,14 +152,10 @@ export class FeatureRecords {
 
     /**
      * Adds a user-specified filter to the set of filters applied to the
-     * data.
+     * data. The filter function is annotated with each of this functions
+     * arguments for display in the UI.
      */
-    addFilter(
-        index: number,
-        slice: string,
-        relationship: string,
-        value: number,
-    ) {
+    addFilter(slice: string, relationship: string, value: number) {
         const filter = (record: FeatureRecord) => {
             const variableValue = record.getVariableSlice(
                 this.viewVariable,
@@ -168,14 +171,25 @@ export class FeatureRecords {
             throw new Error(`Unexpected relationship ${relationship}.`);
         };
 
-        this.filters[index] = filter;
+        // annotate function with its defining characteristics
+        filter.slice = slice;
+        filter.relationship = relationship;
+        filter.value = value;
+
+        this.filters.push(filter);
     }
 
     /**
      * Removes a filter by index.
      */
-    removeFilter(index: number) {
-        delete this.filters[index];
+    removeFilter(slice: string, relationship: string, value: number) {
+        this.filters = this.filters.filter((f) => {
+            return !(
+                f.slice == slice &&
+                f.relationship == relationship &&
+                f.value == value
+            );
+        });
     }
 
     /**

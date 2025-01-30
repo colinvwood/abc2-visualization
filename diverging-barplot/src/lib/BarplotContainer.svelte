@@ -1,12 +1,14 @@
 <script lang="ts">
     import Barplot from "./Barplot.svelte";
+    import FilterContainer from "./FilterContainer.svelte";
 
     const { features } = $props();
-
-    let s = $state(0);
 </script>
 
+<p>I am the container</p>
+
 <Barplot {features} />
+<FilterContainer {features} />
 
 <style>
 </style>
