@@ -8,6 +8,7 @@ type PlotDimensions = {
     plotWidth: number;
     plotHeight: number;
     barHeight: number;
+    barPadding: number;
 };
 
 export class DivergingBarplot {
@@ -23,8 +24,8 @@ export class DivergingBarplot {
         this.dimensions = this.createDimensions();
         this.xScale = this.createXScale();
         this.yScale = this.createYScale();
-        this.xAxis = this.createXAxis(this.xScale);
-        this.yAxis = this.createYAxis(this.yScale);
+        this.xAxis = this.createXAxis();
+        this.yAxis = this.createYAxis();
 
         this.drawPlot();
     }
@@ -33,28 +34,32 @@ export class DivergingBarplot {
      */
     createDimensions(): PlotDimensions {
         const numFeatures = this.data.length;
-        const barHeight = 45;
-        const svgHeight = numFeatures * barHeight;
-        const svgWidth = 750;
+        const barHeight = 25;
+        const barPadding = 1.25;
+        const plotHeight = numFeatures * barHeight * barPadding;
+        const plotWidth = 750;
         const margin = 50;
 
         return {
-            svgWidth,
-            svgHeight,
+            svgWidth: plotWidth + 2 * margin,
+            svgHeight: plotHeight + 2 * margin,
             margin,
-            plotWidth: svgWidth - 2 * margin,
-            plotHeight: svgHeight - 2 * margin,
+            plotWidth,
+            plotHeight,
             barHeight,
+            barPadding,
         };
     }
 
     /**
      */
     updatePlotHeight() {
-        this.dimensions.svgHeight =
-            this.data.length * this.dimensions.barHeight;
         this.dimensions.plotHeight =
-            this.dimensions.svgHeight - 2 * this.dimensions.margin;
+            this.data.length *
+            this.dimensions.barHeight *
+            this.dimensions.barPadding;
+        this.dimensions.svgHeight =
+            this.dimensions.plotHeight + 2 * this.dimensions.margin;
     }
 
     /**
@@ -123,7 +128,7 @@ export class DivergingBarplot {
     createYScale(): d3.ScaleBand<any> {
         const domain = this.getYDomain();
         const range = this.getYRange();
-        const scale = d3.scaleBand().domain(domain).range(range).padding(0.2);
+        const scale = d3.scaleBand().domain(domain).range(range);
 
         return scale;
     }
@@ -188,7 +193,7 @@ export class DivergingBarplot {
             .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
             .attr("y", (d, i) => this.yScale(String(i)))
             .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
-            .attr("height", this.yScale.bandwidth())
+            .attr("height", this.dimensions.barHeight)
             .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
     }
 
@@ -238,7 +243,7 @@ export class DivergingBarplot {
             .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
             .attr("y", (d, i) => this.yScale(String(i)))
             .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
-            .attr("height", this.yScale.bandwidth())
+            .attr("height", this.dimensions.barHeight)
             .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
     }
 }
