@@ -1,5 +1,7 @@
 <script lang="ts">
-    const { features, filter } = $props();
+    import features from "../state/features.svelte";
+
+    const { filter } = $props();
 
     function remove() {
         features.removeFilter(filter.slice, filter.relationship, filter.value);

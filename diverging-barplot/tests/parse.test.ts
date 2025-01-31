@@ -131,7 +131,8 @@ describe("parseSlice()", async () => {
 
 describe("parseAllSlices()", async () => {
     const sliceDirPath = "tests/data/output-format";
-    const featureRecords = await parseAllSlices(sliceDirPath);
+    const featureRecords = new FeatureRecords();
+    await parseAllSlices(sliceDirPath, featureRecords);
 
     test("correct number of features", () => {
         assert.equal(featureRecords.records.length, 8);

@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { DivergingBarplot } from "../util/plot";
-
-    const { features } = $props();
+    import features from "../state/features.svelte";
 
     // render features
     features.viewVariable = "year";
@@ -11,21 +10,21 @@
     // draw plot once svg exists
     let plot: DivergingBarplot;
     onMount(() => {
-        plot = new DivergingBarplot(features);
+        plot = new DivergingBarplot(features.view);
     });
 
-    // rerender plot as needed
+    // rerender plot when feature view changes
     $effect(() => {
-        plot.updatePlot(features);
+        plot.updatePlot(features.view);
     });
 
     const increaseBarThickness = () => {
         plot.dimensions.barHeight *= 1.05;
-        plot.updatePlot(features);
+        plot.updatePlot(features.view);
     };
     const decreaseBarThickness = () => {
         plot.dimensions.barHeight *= 0.95;
-        plot.updatePlot(features);
+        plot.updatePlot(features.view);
     };
 </script>
 

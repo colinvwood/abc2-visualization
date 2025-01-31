@@ -26,20 +26,20 @@ type JSONLFeatureRecord = {
 
 /**
  * Parses slice data from the ANCOMBC2 output format that resides inside of the
- * visualization artifact.
+ * visualization artifact. Side-effects `featureRecords` by adding/updating
+ * parsed features.
  */
 export async function parseAllSlices(
     slicesDir: string,
-): Promise<FeatureRecords> {
-    const featureRecords = new FeatureRecords();
-
+    featureRecords: FeatureRecords,
+): Promise<any> {
     const slices = ["lfc", "p", "q", "se"];
     for (let slice of slices) {
         const sliceFilepath = `${slicesDir}/${slice}.jsonl`;
         await parseSlice(sliceFilepath, featureRecords);
     }
 
-    return featureRecords;
+    return Promise.resolve();
 }
 
 /**

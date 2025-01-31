@@ -1,7 +1,8 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
+    import features from "../state/features.svelte";
 
-    let { features, isAdderVisible, hideAdder } = $props();
+    let { isAdderVisible, hideAdder } = $props();
 
     let filterInfo = $state({
         slice: "",
@@ -55,7 +56,7 @@
 </script>
 
 {#if isAdderVisible}
-    <div class="filter-adder" transition:slide={{ duration: 250 }}>
+    <div class="filter-adder" transition:slide={{ duration: 200 }}>
         <label for="slice">I want to filter features that have a</label>
         <select name="slice" id="slice" bind:value={filterInfo.slice}>
             <option value="lfc">lfc (log fold change)</option>
@@ -87,7 +88,7 @@
         <button onclick={addFilter}>Apply</button>
 
         {#if errorMessage}
-            <p class="error-message">{errorMessage}</p>
+            <p class="error-message" transition:slide>{errorMessage}</p>
         {/if}
     </div>
 {/if}

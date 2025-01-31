@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { FeatureRecords } from "../state/features.svelte";
+import { type ViewRecord } from "../state/features.svelte";
 
 type PlotDimensions = {
     svgWidth: number;
@@ -11,26 +11,28 @@ type PlotDimensions = {
 };
 
 export class DivergingBarplot {
+    data: ViewRecord[];
     dimensions: PlotDimensions;
     xScale: d3.ScaleLinear<number, number>;
     yScale: d3.ScaleBand<any>;
     xAxis: d3.Selection<any, any, any, any>;
     yAxis: d3.Selection<any, any, any, any>;
 
-    constructor(features: FeatureRecords) {
-        this.dimensions = this.createDimensions(features);
-        this.xScale = this.createXScale(features);
-        this.yScale = this.createYScale(features);
+    constructor(data: ViewRecord[]) {
+        this.data = data;
+        this.dimensions = this.createDimensions();
+        this.xScale = this.createXScale();
+        this.yScale = this.createYScale();
         this.xAxis = this.createXAxis(this.xScale);
         this.yAxis = this.createYAxis(this.yScale);
 
-        this.drawPlot(features);
+        this.drawPlot();
     }
 
     /**
      */
-    createDimensions(features: FeatureRecords): PlotDimensions {
-        const numFeatures = features.view.length;
+    createDimensions(): PlotDimensions {
+        const numFeatures = this.data.length;
         const barHeight = 45;
         const svgHeight = numFeatures * barHeight;
         const svgWidth = 750;
@@ -48,18 +50,18 @@ export class DivergingBarplot {
 
     /**
      */
-    updatePlotHeight(features: FeatureRecords) {
+    updatePlotHeight() {
         this.dimensions.svgHeight =
-            features.view.length * this.dimensions.barHeight;
+            this.data.length * this.dimensions.barHeight;
         this.dimensions.plotHeight =
             this.dimensions.svgHeight - 2 * this.dimensions.margin;
     }
 
     /**
      */
-    getXDomain(features: FeatureRecords): [number, number] {
+    getXDomain(): [number, number] {
         // get min and max lfc values
-        let [min, max] = d3.extent(features.view.map((f) => f.lfc));
+        let [min, max] = d3.extent(this.data.map((f) => f.lfc));
 
         if (!min || !max) {
             throw new Error("Unable to find min/max of feature lfcs.");
@@ -93,8 +95,8 @@ export class DivergingBarplot {
 
     /**
      */
-    createXScale(features: FeatureRecords): d3.ScaleLinear<number, number> {
-        const domain = this.getXDomain(features);
+    createXScale(): d3.ScaleLinear<number, number> {
+        const domain = this.getXDomain();
         const range = this.getXRange();
         const scale = d3.scaleLinear().domain(domain).range(range);
 
@@ -103,8 +105,8 @@ export class DivergingBarplot {
 
     /**
      */
-    getYDomain(features: FeatureRecords): string[] {
-        return d3.range(0, features.view.length).map((i) => String(i));
+    getYDomain(): string[] {
+        return d3.range(0, this.data.length).map((i) => String(i));
     }
 
     /**
@@ -118,8 +120,8 @@ export class DivergingBarplot {
 
     /**
      */
-    createYScale(features: FeatureRecords): d3.ScaleBand<any> {
-        const domain = this.getYDomain(features);
+    createYScale(): d3.ScaleBand<any> {
+        const domain = this.getYDomain();
         const range = this.getYRange();
         const scale = d3.scaleBand().domain(domain).range(range).padding(0.2);
 
@@ -141,22 +143,20 @@ export class DivergingBarplot {
 
     /**
      */
-    createXAxis(
-        scale: d3.ScaleLinear<number, number>,
-    ): d3.Selection<any, any, any, any> {
+    createXAxis(): d3.Selection<any, any, any, any> {
         let axis = d3
             .select("svg")
             .append("g")
             .attr("class", "x-axis")
             .attr("transform", this.getXAxisTranslation())
-            .call(d3.axisBottom(scale));
+            .call(d3.axisBottom(this.xScale));
 
         return axis;
     }
 
     /**
      */
-    createYAxis(scale: d3.ScaleBand<any>): d3.Selection<any, any, any, any> {
+    createYAxis(): d3.Selection<any, any, any, any> {
         let axis = d3
             .select("svg")
             .append("g")
@@ -174,7 +174,7 @@ export class DivergingBarplot {
 
     /**
      */
-    drawPlot(features: FeatureRecords) {
+    drawPlot() {
         // size svg
         let svg = d3
             .select("svg")
@@ -183,7 +183,7 @@ export class DivergingBarplot {
 
         // draw bars
         svg.selectAll("rect")
-            .data(features.view)
+            .data(this.data)
             .join("rect")
             .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
             .attr("y", (d, i) => this.yScale(String(i)))
@@ -194,14 +194,17 @@ export class DivergingBarplot {
 
     /**
      */
-    updatePlot(features: FeatureRecords) {
+    updatePlot(data: ViewRecord[]) {
+        console.log("view records in update plot", data);
+        this.data = data;
+
         // update plot height
-        this.updatePlotHeight(features);
+        this.updatePlotHeight();
 
         // update scales
-        const xDomain = this.getXDomain(features);
+        const xDomain = this.getXDomain();
         const xRange = this.getXRange();
-        const yDomain = this.getYDomain(features);
+        const yDomain = this.getYDomain();
         const yRange = this.getYRange();
 
         this.xScale.domain(xDomain).range(xRange);
@@ -228,7 +231,8 @@ export class DivergingBarplot {
         // transition bars
         d3.select("svg")
             .selectAll("rect")
-            .data(features.view)
+            .data(this.data)
+            .join("rect")
             .transition()
             .duration(500)
             .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))

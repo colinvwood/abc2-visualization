@@ -1,11 +1,13 @@
 <script lang="ts">
     import FilterAdder from "./FilterAdder.svelte";
     import Filter from "./Filter.svelte";
-    import { FeatureRecords } from "../state/features.svelte";
+    import features from "../state/features.svelte";
 
-    const { features } = $props();
-
-    // map FeatureRecord filter state to Filter components
+    // rerender feature view when filters change
+    $effect(() => {
+        features.filters;
+        features.render();
+    });
 
     // filter adder state
     let isAdderVisible = $state(false);
@@ -18,10 +20,10 @@
 </script>
 
 <button onclick={showAdder}>Add Filter</button>
-<FilterAdder {features} {isAdderVisible} {hideAdder} />
+<FilterAdder {isAdderVisible} {hideAdder} />
 
 {#each features.filters as filter}
-    <Filter {features} {filter} />
+    <Filter {filter} />
 {/each}
 
 <style></style>

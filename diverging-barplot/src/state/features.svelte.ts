@@ -136,7 +136,7 @@ export class FeatureRecords {
 
     /**
      * Adds a new feature. If a matching feature is already present then
-     * merges that features variables with those from `feature`.
+     * merges that feature's variables with those from `feature`.
      */
     addFeature(feature: FeatureRecord): undefined {
         let matchingFeature = this.getFeature(feature.featureId);
@@ -163,10 +163,10 @@ export class FeatureRecords {
                 this.viewVariableLevel,
             );
 
-            if (relationship == "gt") return variableValue > value;
-            if (relationship == "ge") return variableValue >= value;
-            if (relationship == "lt") return variableValue < value;
-            if (relationship == "le") return variableValue <= value;
+            if (relationship == "gt") return !(variableValue > value);
+            if (relationship == "ge") return !(variableValue >= value);
+            if (relationship == "lt") return !(variableValue < value);
+            if (relationship == "le") return !(variableValue <= value);
 
             throw new Error(`Unexpected relationship ${relationship}.`);
         };
@@ -236,3 +236,7 @@ export class FeatureRecords {
         this.view = viewRecords;
     }
 }
+
+// global state
+let features = new FeatureRecords();
+export default features;
