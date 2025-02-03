@@ -179,6 +179,90 @@ export class DivergingBarplot {
 
     /**
      */
+    addHoverHandlers() {
+        // event handlers
+        const handleMouseover = (e: any, d: any) => {
+            const tooltipData = [
+                `feature ID: ${d.featureId}`,
+                `classification: todo`,
+                `lfc: ${d.lfc}`,
+                `se: ${d.se}`,
+                `p-value: ${d.p}`,
+                `q-value: ${d.q}`,
+            ];
+
+            d3.select(".tooltip")
+                .style("left", `${e.clientX + 25}px`)
+                .style("top", `${e.clientY - 10}px`)
+                .selectAll("p")
+                .data(tooltipData)
+                .join("p")
+                .text((d, i) => tooltipData[i])
+                .style("margin", "2px");
+
+            d3.select(".tooltip")
+                .transition()
+                .duration(300)
+                .style("opacity", 1);
+        };
+
+        const handleMousemove = (e: any, d: any) => {
+            d3.select(".tooltip")
+                .style("left", `${e.clientX + 25}px`)
+                .style("top", `${e.clientY - 10}px`);
+        };
+
+        const handleMouseout = (e: any, d: any) => {
+            d3.select(".tooltip")
+                .transition()
+                .duration(300)
+                .style("opacity", 0);
+        };
+
+        // create tooltip
+        d3.select("body")
+            .append("div")
+            .attr("class", "tooltip")
+            .style("background-color", "#f0edef")
+            .style("padding", "10px")
+            .style("border-radius", "10px")
+            .style("position", "absolute")
+            .style("opacity", 0);
+
+        // register event handlers
+        d3.select("svg")
+            .selectAll("rect, .error-bar")
+            .on("mouseover", handleMouseover)
+            .on("mousemove", handleMousemove)
+            .on("mouseout", handleMouseout);
+    }
+
+    /**
+     */
+    drawErrorBar(path: d3.Path, d: ViewRecord, i: number): d3.Path {
+        // calculate error bar layout
+        const startX = this.xScale(d.lfc)!;
+        const startY =
+            this.yScale(i.toString())! + this.dimensions.barHeight / 2;
+
+        const errorBarRight = this.xScale(d.lfc + d.se);
+        const errorBarLeft = startX - (errorBarRight - startX);
+        const errorBarTop = startY + 0.25 * this.dimensions.barHeight;
+        const errorBarBottom = startY - 0.25 * this.dimensions.barHeight;
+
+        // draw error bar
+        path.moveTo(errorBarRight, errorBarTop);
+        path.lineTo(errorBarRight, errorBarBottom);
+        path.moveTo(errorBarRight, startY);
+        path.lineTo(errorBarLeft, startY);
+        path.moveTo(errorBarLeft, errorBarTop);
+        path.lineTo(errorBarLeft, errorBarBottom);
+
+        return path;
+    }
+
+    /**
+     */
     drawPlot() {
         // size svg
         let svg = d3
@@ -195,12 +279,24 @@ export class DivergingBarplot {
             .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
             .attr("height", this.dimensions.barHeight)
             .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+
+        // draw error bars
+        d3.select("svg")
+            .selectAll(".error-bar")
+            .data(this.data)
+            .join("path")
+            .attr("class", "error-bar")
+            .attr("d", (d, i) => this.drawErrorBar(d3.path(), d, i).toString())
+            .attr("stroke", "black")
+            .attr("stroke-width", "2px");
+
+        // attach event listeners
+        this.addHoverHandlers();
     }
 
     /**
      */
     updatePlot(data: ViewRecord[]) {
-        console.log("view records in update plot", data);
         this.data = data;
 
         // update plot height
@@ -239,11 +335,26 @@ export class DivergingBarplot {
             .data(this.data)
             .join("rect")
             .transition()
-            .duration(500)
+            .duration(400)
             .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
             .attr("y", (d, i) => this.yScale(String(i)))
             .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
             .attr("height", this.dimensions.barHeight)
             .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+
+        // transition error bars
+        d3.select("svg")
+            .selectAll(".error-bar")
+            .data(this.data)
+            .join("path")
+            .transition()
+            .duration(400)
+            .attr("class", "error-bar")
+            .attr("d", (d, i) => this.drawErrorBar(d3.path(), d, i).toString())
+            .attr("stroke", "black")
+            .attr("stroke-width", "2px");
+
+        // reattach hover event listeners
+        this.addHoverHandlers();
     }
 }

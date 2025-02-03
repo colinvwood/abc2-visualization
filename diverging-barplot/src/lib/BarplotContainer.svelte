@@ -3,8 +3,6 @@
     import FilterContainer from "./FilterContainer.svelte";
 </script>
 
-<p>I am the container</p>
-
 <Barplot />
 <FilterContainer />
 

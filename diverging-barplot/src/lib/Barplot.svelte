@@ -42,4 +42,7 @@
     button {
         display: block;
     }
+    svg .error-bar {
+        stroke: black;
+    }
 </style>
