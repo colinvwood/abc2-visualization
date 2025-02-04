@@ -311,6 +311,12 @@ export class DivergingBarplot {
         this.xScale.domain(xDomain).range(xRange);
         this.yScale.domain(yDomain).range(yRange);
 
+        // update svg dimensions
+        let svg = d3
+            .select("svg")
+            .attr("width", this.dimensions.svgWidth)
+            .attr("height", this.dimensions.svgHeight);
+
         // transition axes
         this.xAxis
             .transition()
@@ -356,5 +362,44 @@ export class DivergingBarplot {
 
         // reattach hover event listeners
         this.addHoverHandlers();
+    }
+
+    /**
+     */
+    hidePlot() {
+        // gray-out the plot
+        d3.select("svg")
+            .append("rect")
+            .attr("class", "hider")
+            .attr("width", this.dimensions.svgWidth)
+            .attr("height", this.dimensions.svgHeight)
+            .attr("fill", "gray")
+            .attr("opacity", 0.8);
+
+        // add error message
+        d3.select("svg")
+            .append("rect")
+            .attr("class", "hider-text-box")
+            .attr("x", 0.3 * this.dimensions.svgWidth)
+            .attr("y", 0.4 * this.dimensions.svgHeight)
+            .attr("width", 0.4 * this.dimensions.svgWidth)
+            .attr("height", 0.2 * this.dimensions.svgHeight)
+            .attr("fill", "white");
+
+        d3.select("svg")
+            .append("text")
+            .attr("class", "hider-text")
+            .text("Oops! All features were filtered.")
+            .attr("x", this.dimensions.svgWidth / 2)
+            .attr("y", this.dimensions.svgHeight / 2)
+            .attr("dominant-baseline", "middle")
+            .attr("text-anchor", "middle")
+            .attr("font-size", "18px");
+    }
+
+    /**
+     */
+    showPlot() {
+        d3.selectAll(".hider, .hider-text, .hider-text-box").remove();
     }
 }

@@ -15,7 +15,12 @@
 
     // rerender plot when feature view changes
     $effect(() => {
-        plot.updatePlot(features.view);
+        if (features.view.length > 0) {
+            plot.showPlot();
+            plot.updatePlot(features.view);
+        } else {
+            plot.hidePlot();
+        }
     });
 
     const increaseBarThickness = () => {
@@ -36,13 +41,7 @@
 <svg></svg>
 
 <style>
-    svg {
-        border: 1px solid black;
-    }
     button {
         display: block;
-    }
-    svg .error-bar {
-        stroke: black;
     }
 </style>
