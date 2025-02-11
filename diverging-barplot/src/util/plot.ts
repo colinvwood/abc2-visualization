@@ -11,7 +11,7 @@ type PlotDimensions = {
     barPadding: number;
 };
 
-export class DivergingBarplot {
+class DivergingBarplot {
     data: ViewRecord[];
     dimensions: PlotDimensions;
     xScale: d3.ScaleLinear<number, number>;
@@ -26,8 +26,6 @@ export class DivergingBarplot {
         this.yScale = this.createYScale();
         this.xAxis = this.createXAxis();
         this.yAxis = this.createYAxis();
-
-        this.drawPlot();
     }
 
     /**
@@ -53,6 +51,12 @@ export class DivergingBarplot {
 
     /**
      */
+    updateData(data: ViewRecord[]) {
+        this.data = data;
+    }
+
+    /**
+     */
     updatePlotHeight() {
         this.dimensions.plotHeight =
             this.data.length *
@@ -60,6 +64,16 @@ export class DivergingBarplot {
             this.dimensions.barPadding;
         this.dimensions.svgHeight =
             this.dimensions.plotHeight + 2 * this.dimensions.margin;
+    }
+
+    increaseBarThickness() {
+        this.dimensions.barHeight *= 1.05;
+        this.updatePlot();
+    }
+
+    decreaseBarThickness() {
+        this.dimensions.barHeight *= 0.95;
+        this.updatePlot();
     }
 
     /**
@@ -296,9 +310,7 @@ export class DivergingBarplot {
 
     /**
      */
-    updatePlot(data: ViewRecord[]) {
-        this.data = data;
-
+    updatePlot() {
         // update plot height
         this.updatePlotHeight();
 
@@ -374,7 +386,7 @@ export class DivergingBarplot {
             .attr("width", this.dimensions.svgWidth)
             .attr("height", this.dimensions.svgHeight)
             .attr("fill", "gray")
-            .attr("opacity", 0.8);
+            .attr("opacity", 0.9);
 
         // add error message
         d3.select("svg")
@@ -403,3 +415,6 @@ export class DivergingBarplot {
         d3.selectAll(".hider, .hider-text, .hider-text-box").remove();
     }
 }
+
+const plot = new DivergingBarplot([]);
+export default plot;

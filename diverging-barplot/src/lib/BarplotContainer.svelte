@@ -3,8 +3,14 @@
     import FilterContainer from "./FilterContainer.svelte";
 </script>
 
-<Barplot />
-<FilterContainer />
+<div class="plot-container">
+    <Barplot />
+    <FilterContainer />
+</div>
 
 <style>
+    .plot-container {
+        display: grid;
+        grid-template-columns: repeat(10, 10%);
+    }
 </style>
