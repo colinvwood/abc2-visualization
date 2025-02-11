@@ -2,7 +2,7 @@
     import { slide } from "svelte/transition";
     import features from "../state/features.svelte";
 
-    let { isAdderVisible, hideAdder } = $props();
+    let { hide } = $props();
 
     let filterInfo = $state({
         slice: "",
@@ -51,21 +51,22 @@
         };
 
         // hide ourselves
-        hideAdder();
+        hide();
     }
 </script>
 
-{#if isAdderVisible}
-    <div class="filter-adder" transition:slide={{ duration: 200 }}>
-        <label for="slice">I want to filter features that have a</label>
+<div class="filter-adder" transition:slide={{ duration: 200 }}>
+    <div class="filter-input">
+        <label for="slice">Statistic:</label>
         <select name="slice" id="slice" bind:value={filterInfo.slice}>
             <option value="lfc">lfc (log fold change)</option>
             <option value="se">se (standard error)</option>
             <option value="p">p-value</option>
             <option value="q">adjusted p-value (q)</option>
         </select>
-
-        <label for="relationshiop">that is</label>
+    </div>
+    <div class="filter-input">
+        <label for="relationshiop">Relationship:</label>
         <select
             name="relationship"
             id="relationship"
@@ -76,24 +77,48 @@
             <option value="lt">less than</option>
             <option value="le">less than/equal</option>
         </select>
-
-        <label for="value">than the number</label>
+    </div>
+    <div class="filter-input">
+        <label for="value">Value:</label>
         <input
             type="text"
             id="value"
             name="value"
             bind:value={filterInfo.value}
         />
-
-        <button onclick={addFilter}>Apply</button>
-
-        {#if errorMessage}
-            <p class="error-message" transition:slide>{errorMessage}</p>
-        {/if}
     </div>
-{/if}
+
+    <button onclick={addFilter}>Apply</button>
+
+    {#if errorMessage}
+        <p class="error-message" transition:slide>{errorMessage}</p>
+    {/if}
+</div>
 
 <style>
+    .filter-adder {
+        padding: 15px;
+        background-color: lightblue;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: space-between;
+        border-radius: 5px;
+    }
+    .filter-input {
+        margin-bottom: 5px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    .filter-input select {
+        min-width: 50px;
+        max-width: 125px;
+    }
+    .filter-input input {
+        min-width: 50px;
+        max-width: 118px;
+    }
     .error-message {
         color: red;
     }

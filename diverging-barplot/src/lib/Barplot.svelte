@@ -9,7 +9,7 @@
 
     // draw plot once svg exists
     onMount(() => {
-        plot.updateData(features.view);
+        plot.init(features.view);
         plot.drawPlot();
     });
 
@@ -26,16 +26,13 @@
     });
 </script>
 
-<div class="button-container">
-    <button onclick={() => plot.increaseBarThickness()}>Bar Thickness +</button>
-    <button onclick={() => plot.decreaseBarThickness()}>Bar Thickness -</button>
+<div class="svg-container">
+    <svg></svg>
 </div>
 
-<svg></svg>
-
 <style>
-    svg {
-        grid-column-start: 2;
-        grid-column-end: 6;
+    .svg-container {
+        grid-column: 2 / 3;
+        grid-row: 2 / 3;
     }
 </style>

@@ -11,15 +11,15 @@ type PlotDimensions = {
     barPadding: number;
 };
 
-class DivergingBarplot {
-    data: ViewRecord[];
-    dimensions: PlotDimensions;
-    xScale: d3.ScaleLinear<number, number>;
-    yScale: d3.ScaleBand<any>;
-    xAxis: d3.Selection<any, any, any, any>;
-    yAxis: d3.Selection<any, any, any, any>;
+export class DivergingBarplot {
+    data: ViewRecord[] = [];
+    dimensions: PlotDimensions = {};
+    xScale: d3.ScaleLinear<number, number> = d3.scaleLinear();
+    yScale: d3.ScaleBand<any> = d3.scaleBand();
+    xAxis: d3.Selection<any, any, any, any> = d3.selection();
+    yAxis: d3.Selection<any, any, any, any> = d3.selection();
 
-    constructor(data: ViewRecord[]) {
+    init(data: ViewRecord[]) {
         this.data = data;
         this.dimensions = this.createDimensions();
         this.xScale = this.createXScale();
@@ -416,5 +416,5 @@ class DivergingBarplot {
     }
 }
 
-const plot = new DivergingBarplot([]);
+const plot = new DivergingBarplot();
 export default plot;
