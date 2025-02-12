@@ -36,7 +36,7 @@ export class DivergingBarplot {
         const barPadding = 1.25;
         const plotHeight = numFeatures * barHeight * barPadding;
         const plotWidth = 750;
-        const margin = 50;
+        const margin = 75;
 
         return {
             svgWidth: plotWidth + 2 * margin,
@@ -169,6 +169,16 @@ export class DivergingBarplot {
             .attr("class", "x-axis")
             .attr("transform", this.getXAxisTranslation())
             .call(d3.axisBottom(this.xScale));
+
+        axis.selectAll("text").attr("font-size", "14px");
+
+        axis.append("text")
+            .text("LFC (Log Fold Change)")
+            .attr("fill", "black")
+            .attr("font-size", "18px")
+            .attr("id", "xaxis-label")
+            .attr("x", "50%")
+            .attr("y", 60);
 
         return axis;
     }
@@ -335,6 +345,9 @@ export class DivergingBarplot {
             .duration(500)
             .attr("transform", this.getXAxisTranslation())
             .call(d3.axisBottom(this.xScale));
+
+        this.xAxis.selectAll("text").attr("font-size", "14px");
+        this.xAxis.select("#xaxis-label").attr("font-size", "18px");
 
         this.yAxis
             .transition()
