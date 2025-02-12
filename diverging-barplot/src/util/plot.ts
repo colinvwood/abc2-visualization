@@ -19,6 +19,8 @@ export class DivergingBarplot {
     xAxis: d3.Selection<any, any, any, any> = d3.selection();
     yAxis: d3.Selection<any, any, any, any> = d3.selection();
 
+    /**
+     */
     init(data: ViewRecord[]) {
         this.data = data;
         this.dimensions = this.createDimensions();
@@ -66,14 +68,18 @@ export class DivergingBarplot {
             this.dimensions.plotHeight + 2 * this.dimensions.margin;
     }
 
+    /**
+     */
     increaseBarThickness() {
         this.dimensions.barHeight *= 1.05;
-        this.updatePlot();
+        this.drawPlot(true);
     }
 
+    /**
+     */
     decreaseBarThickness() {
         this.dimensions.barHeight *= 0.95;
-        this.updatePlot();
+        this.drawPlot(true);
     }
 
     /**
@@ -287,105 +293,118 @@ export class DivergingBarplot {
 
     /**
      */
-    drawPlot() {
+    drawPlot(transition: boolean) {
         // size svg
-        let svg = d3
-            .select("svg")
-            .attr("width", this.dimensions.svgWidth)
-            .attr("height", this.dimensions.svgHeight);
+        if (!transition) {
+            // todo: factor into function?
+            let svg = d3
+                .select("svg")
+                .attr("width", this.dimensions.svgWidth)
+                .attr("height", this.dimensions.svgHeight);
+        }
+
+        if (transition) {
+            // update plot height
+            this.updatePlotHeight();
+
+            // update scales
+            const xDomain = this.getXDomain();
+            const xRange = this.getXRange();
+            const yDomain = this.getYDomain();
+            const yRange = this.getYRange();
+
+            this.xScale.domain(xDomain).range(xRange);
+            this.yScale.domain(yDomain).range(yRange);
+
+            // resize svg
+            let svg = d3
+                .select("svg")
+                .attr("width", this.dimensions.svgWidth)
+                .attr("height", this.dimensions.svgHeight);
+
+            // transition axes
+            this.xAxis
+                .transition()
+                .duration(500)
+                .attr("transform", this.getXAxisTranslation())
+                .call(d3.axisBottom(this.xScale));
+
+            this.xAxis.selectAll("text").attr("font-size", "14px");
+            this.xAxis.select("#xaxis-label").attr("font-size", "18px");
+
+            this.yAxis
+                .transition()
+                .duration(500)
+                .attr("transform", this.getYAxisTranslation())
+                .call(
+                    d3
+                        .axisLeft(this.yScale)
+                        .tickSize(0)
+                        .tickFormat("" as any),
+                );
+        }
 
         // draw bars
-        svg.selectAll("rect")
-            .data(this.data)
-            .join("rect")
-            .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
-            .attr("y", (d, i) => this.yScale(String(i)))
-            .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
-            .attr("height", this.dimensions.barHeight)
-            .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
-
-        // draw error bars
-        d3.select("svg")
-            .selectAll(".error-bar")
-            .data(this.data)
-            .join("path")
-            .attr("class", "error-bar")
-            .attr("d", (d, i) => this.drawErrorBar(d3.path(), d, i).toString())
-            .attr("stroke", "black")
-            .attr("stroke-width", "2px");
-
-        // attach event listeners
-        this.addHoverHandlers();
-    }
-
-    /**
-     */
-    updatePlot() {
-        // update plot height
-        this.updatePlotHeight();
-
-        // update scales
-        const xDomain = this.getXDomain();
-        const xRange = this.getXRange();
-        const yDomain = this.getYDomain();
-        const yRange = this.getYRange();
-
-        this.xScale.domain(xDomain).range(xRange);
-        this.yScale.domain(yDomain).range(yRange);
-
-        // update svg dimensions
-        let svg = d3
+        let barSelection = d3
             .select("svg")
-            .attr("width", this.dimensions.svgWidth)
-            .attr("height", this.dimensions.svgHeight);
-
-        // transition axes
-        this.xAxis
-            .transition()
-            .duration(500)
-            .attr("transform", this.getXAxisTranslation())
-            .call(d3.axisBottom(this.xScale));
-
-        this.xAxis.selectAll("text").attr("font-size", "14px");
-        this.xAxis.select("#xaxis-label").attr("font-size", "18px");
-
-        this.yAxis
-            .transition()
-            .duration(500)
-            .attr("transform", this.getYAxisTranslation())
-            .call(
-                d3
-                    .axisLeft(this.yScale)
-                    .tickSize(0)
-                    .tickFormat("" as any),
-            );
-
-        // transition bars
-        d3.select("svg")
             .selectAll("rect")
             .data(this.data)
-            .join("rect")
-            .transition()
-            .duration(400)
-            .attr("x", (d) => (d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc)))
-            .attr("y", (d, i) => this.yScale(String(i)))
-            .attr("width", (d) => Math.abs(this.xScale(d.lfc) - this.xScale(0)))
-            .attr("height", this.dimensions.barHeight)
-            .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+            .join("rect");
 
-        // transition error bars
-        d3.select("svg")
+        if (transition) {
+            barSelection
+                .transition()
+                .duration(400)
+                .attr("x", (d) =>
+                    d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc),
+                )
+                .attr("y", (d, i) => this.yScale(String(i)))
+                .attr("width", (d) =>
+                    Math.abs(this.xScale(d.lfc) - this.xScale(0)),
+                )
+                .attr("height", this.dimensions.barHeight)
+                .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+        } else {
+            barSelection
+                .attr("x", (d) =>
+                    d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc),
+                )
+                .attr("y", (d, i) => this.yScale(String(i)))
+                .attr("width", (d) =>
+                    Math.abs(this.xScale(d.lfc) - this.xScale(0)),
+                )
+                .attr("height", this.dimensions.barHeight)
+                .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+        }
+
+        // draw error bars
+        let errorBarSelection = d3
+            .select("svg")
             .selectAll(".error-bar")
             .data(this.data)
-            .join("path")
-            .transition()
-            .duration(400)
-            .attr("class", "error-bar")
-            .attr("d", (d, i) => this.drawErrorBar(d3.path(), d, i).toString())
-            .attr("stroke", "black")
-            .attr("stroke-width", "2px");
+            .join("path");
 
-        // reattach hover event listeners
+        if (transition) {
+            errorBarSelection
+                .transition()
+                .duration(400)
+                .attr("class", "error-bar")
+                .attr("d", (d, i) =>
+                    this.drawErrorBar(d3.path(), d, i).toString(),
+                )
+                .attr("stroke", "black")
+                .attr("stroke-width", "2px");
+        } else {
+            errorBarSelection
+                .attr("class", "error-bar")
+                .attr("d", (d, i) =>
+                    this.drawErrorBar(d3.path(), d, i).toString(),
+                )
+                .attr("stroke", "black")
+                .attr("stroke-width", "2px");
+        }
+
+        // attach hover event listeners
         this.addHoverHandlers();
     }
 

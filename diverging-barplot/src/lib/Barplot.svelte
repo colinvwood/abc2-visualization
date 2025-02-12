@@ -10,7 +10,7 @@
     // draw plot once svg exists
     onMount(() => {
         plot.init(features.view);
-        plot.drawPlot();
+        plot.drawPlot(false);
     });
 
     // rerender plot when feature view changes
@@ -19,7 +19,7 @@
 
         if (features.view.length > 0) {
             plot.showPlot();
-            plot.updatePlot();
+            plot.drawPlot(true);
         } else {
             plot.hidePlot();
         }
