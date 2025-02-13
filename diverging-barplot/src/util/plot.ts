@@ -222,6 +222,7 @@ export class DivergingBarplot {
             ];
 
             d3.select(".tooltip")
+                .style("display", "unset")
                 .style("left", `${e.clientX + 25}px`)
                 .style("top", `${e.clientY - 10}px`)
                 .selectAll("p")
@@ -232,7 +233,7 @@ export class DivergingBarplot {
 
             d3.select(".tooltip")
                 .transition()
-                .duration(300)
+                .duration(200)
                 .style("opacity", 1);
         };
 
@@ -245,18 +246,25 @@ export class DivergingBarplot {
         const handleMouseout = (e: any, d: any) => {
             d3.select(".tooltip")
                 .transition()
-                .duration(300)
-                .style("opacity", 0);
+                .duration(200)
+                .style("opacity", 0)
+                .end()
+                .then(() => {
+                    d3.select(".tooltip").style("display", "none");
+                });
         };
 
         // create tooltip
         d3.select("body")
-            .append("div")
+            .selectAll(".tooltip")
+            .data([1])
+            .join("div")
             .attr("class", "tooltip")
             .style("background-color", "#f0edef")
             .style("padding", "10px")
             .style("border-radius", "10px")
             .style("position", "absolute")
+            .style("display", "none")
             .style("opacity", 0);
 
         // register event handlers
