@@ -294,13 +294,15 @@ export class DivergingBarplot {
     /**
      */
     drawPlot(transition: boolean) {
-        // size svg
-        if (!transition) {
-            // todo: factor into function?
+        const sizeSvg = () => {
             let svg = d3
                 .select("svg")
                 .attr("width", this.dimensions.svgWidth)
                 .attr("height", this.dimensions.svgHeight);
+        };
+
+        if (!transition) {
+            sizeSvg();
         }
 
         if (transition) {
@@ -317,10 +319,7 @@ export class DivergingBarplot {
             this.yScale.domain(yDomain).range(yRange);
 
             // resize svg
-            let svg = d3
-                .select("svg")
-                .attr("width", this.dimensions.svgWidth)
-                .attr("height", this.dimensions.svgHeight);
+            sizeSvg();
 
             // transition axes
             this.xAxis
@@ -351,30 +350,23 @@ export class DivergingBarplot {
             .data(this.data)
             .join("rect");
 
+        const drawBars = (selection: any) => {
+            selection
+                .attr("x", (d) =>
+                    d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc),
+                )
+                .attr("y", (d, i) => this.yScale(String(i)))
+                .attr("width", (d) =>
+                    Math.abs(this.xScale(d.lfc) - this.xScale(0)),
+                )
+                .attr("height", this.dimensions.barHeight)
+                .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+        };
+
         if (transition) {
-            barSelection
-                .transition()
-                .duration(400)
-                .attr("x", (d) =>
-                    d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc),
-                )
-                .attr("y", (d, i) => this.yScale(String(i)))
-                .attr("width", (d) =>
-                    Math.abs(this.xScale(d.lfc) - this.xScale(0)),
-                )
-                .attr("height", this.dimensions.barHeight)
-                .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+            barSelection.transition().duration(400).call(drawBars.bind(this));
         } else {
-            barSelection
-                .attr("x", (d) =>
-                    d.lfc > 0 ? this.xScale(0) : this.xScale(d.lfc),
-                )
-                .attr("y", (d, i) => this.yScale(String(i)))
-                .attr("width", (d) =>
-                    Math.abs(this.xScale(d.lfc) - this.xScale(0)),
-                )
-                .attr("height", this.dimensions.barHeight)
-                .attr("fill", (d) => (d.lfc > 0 ? "green" : "red"));
+            barSelection.call(drawBars.bind(this));
         }
 
         // draw error bars
@@ -382,26 +374,57 @@ export class DivergingBarplot {
             .select("svg")
             .selectAll(".error-bar")
             .data(this.data)
-            .join("path");
+            .join("path")
+            .attr("class", "error-bar");
+
+        const drawErrorBars = (selection: any) => {
+            selection
+                .attr("d", (d, i) =>
+                    this.drawErrorBar(d3.path(), d, i).toString(),
+                )
+                .attr("stroke", "black")
+                .attr("stroke-width", "2px");
+        };
 
         if (transition) {
             errorBarSelection
                 .transition()
                 .duration(400)
-                .attr("class", "error-bar")
-                .attr("d", (d, i) =>
-                    this.drawErrorBar(d3.path(), d, i).toString(),
-                )
-                .attr("stroke", "black")
-                .attr("stroke-width", "2px");
+                .call(drawErrorBars.bind(this));
         } else {
-            errorBarSelection
-                .attr("class", "error-bar")
-                .attr("d", (d, i) =>
-                    this.drawErrorBar(d3.path(), d, i).toString(),
+            errorBarSelection.call(drawErrorBars.bind(this));
+        }
+
+        // draw labels
+        let labelSelection = d3
+            .select("svg")
+            .selectAll(".label")
+            .data(this.data)
+            .join("text")
+            .attr("class", "label");
+
+        const drawLabels = (selection: any) => {
+            selection
+                .text((d) => d.featureId)
+                .attr("x", this.xScale(0))
+                .attr(
+                    "y",
+                    (d, i) =>
+                        this.yScale(String(i)) + this.yScale.bandwidth() / 2,
                 )
-                .attr("stroke", "black")
-                .attr("stroke-width", "2px");
+                .attr("text-anchor", (d) => (d.lfc > 0 ? "end" : "start"))
+                .attr("dx", (d) => (d.lfc > 0 ? -5 : 5))
+                .attr("font-size", "12px")
+                .attr("fill", "#474747");
+        };
+
+        if (transition) {
+            labelSelection
+                .transition()
+                .duration(400)
+                .call(drawLabels.bind(this));
+        } else {
+            labelSelection.call(drawLabels.bind(this));
         }
 
         // attach hover event listeners
