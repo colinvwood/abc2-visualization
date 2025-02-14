@@ -193,6 +193,24 @@ export class FeatureRecords {
     }
 
     /**
+     * Returns all variable records in the feature dataset. Accessing only the
+     * first feature record is sufficient because all features have the same
+     * set of variable records. Removes the intercept variable record.
+     *
+     */
+    getAllVariables(): VariableRecord[] {
+        const variables = Array.from(this.records[0].variables.values());
+        return variables.filter((v) => v.name != "(Intercept)");
+    }
+
+    /**
+     */
+    getVariablesWithName(variableName: string): VariableRecord[] {
+        const variables = this.getAllVariables();
+        return variables.filter((v) => v.name == variableName);
+    }
+
+    /**
      * Renders the `view` by applying all existing filters, sorting features
      * by decreasing lfc value, and extracting the slice values for the current
      * `viewVariable`.

@@ -77,7 +77,7 @@
             </select>
         </div>
         <div class="filter-input">
-            <label for="relationshiop">Relationship:</label>
+            <label for="relationship">Relationship:</label>
             <select
                 name="relationship"
                 id="relationship"
