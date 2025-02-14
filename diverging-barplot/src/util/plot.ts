@@ -33,15 +33,26 @@ export class DivergingBarplot {
     /**
      */
     createDimensions(): PlotDimensions {
+        const svg = d3.select("svg");
+        let svgWidth: number;
+        if (!svg.empty()) {
+            svgWidth = svg.node()!.getBoundingClientRect().width;
+        } else {
+            throw new Error(`Svg element not found.`);
+        }
+
         const numFeatures = this.data.length;
-        const barHeight = 25;
+
+        const barHeight = 20;
         const barPadding = 1.25;
+
         const plotHeight = numFeatures * barHeight * barPadding;
-        const plotWidth = 750;
+
         const margin = 75;
+        const plotWidth = svgWidth - 2 * margin;
 
         return {
-            svgWidth: plotWidth + 2 * margin,
+            svgWidth: svgWidth,
             svgHeight: plotHeight + 2 * margin,
             margin,
             plotWidth,
@@ -229,7 +240,8 @@ export class DivergingBarplot {
                 .data(tooltipData)
                 .join("p")
                 .text((d, i) => tooltipData[i])
-                .style("margin", "2px");
+                .style("margin", "2px")
+                .style("box-shadow", "none");
 
             d3.select(".tooltip")
                 .transition()
@@ -264,6 +276,7 @@ export class DivergingBarplot {
             .style("padding", "10px")
             .style("border-radius", "10px")
             .style("position", "absolute")
+            .style("box-shadow", "1px 1px 2px gray")
             .style("display", "none")
             .style("opacity", 0);
 
@@ -421,7 +434,7 @@ export class DivergingBarplot {
                         this.yScale(String(i)) + this.yScale.bandwidth() / 2,
                 )
                 .attr("text-anchor", (d) => (d.lfc > 0 ? "end" : "start"))
-                .attr("dx", (d) => (d.lfc > 0 ? -5 : 5))
+                .attr("dx", (d) => (d.lfc > 0 ? -8 : 8))
                 .attr("font-size", "12px")
                 .attr("fill", "#474747");
         };

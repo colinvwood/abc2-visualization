@@ -35,4 +35,7 @@
         grid-column: 2 / 3;
         grid-row: 2 / 3;
     }
+    svg {
+        width: 100%;
+    }
 </style>
