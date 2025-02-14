@@ -1,6 +1,6 @@
 <script lang="ts">
-    import FilterAdder from "./FilterAdder.svelte";
-    import Filter from "./Filter.svelte";
+    import Filters from "./Filters.svelte";
+    import VariableSelector from "./VariableSelector.svelte";
     import features from "../state/features.svelte";
     import plot from "../util/plot";
 
@@ -9,12 +9,6 @@
         features.filters;
         features.render();
     });
-
-    // filter adder state
-    let showAdder = $state(false);
-    const hide = () => {
-        showAdder = false;
-    };
 </script>
 
 <div class="controls-container">
@@ -30,21 +24,9 @@
         </button>
     </div>
 
-    <div class="header-container">
-        <p>Filters</p>
-    </div>
+    <VariableSelector />
 
-    <div class="filter-toggle">
-        <button onclick={() => (showAdder = !showAdder)}>Add Filter</button>
-    </div>
-
-    {#if showAdder}
-        <FilterAdder {hide} />
-    {/if}
-
-    {#each features.filters as filter}
-        <Filter {filter} />
-    {/each}
+    <Filters />
 </div>
 
 <style>
@@ -59,27 +41,10 @@
         padding: 10px;
     }
 
-    .filter-toggle {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        margin-bottom: 15px;
-    }
-
     .bar-adjustor-container {
         display: flex;
         flex-direction: row;
         justify-content: space-around;
         margin-bottom: 15px;
-    }
-
-    .header-container {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-    }
-    .header-container p {
-        font-size: 20px;
-        font-weight: bold;
     }
 </style>
