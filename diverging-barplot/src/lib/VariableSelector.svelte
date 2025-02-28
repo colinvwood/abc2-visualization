@@ -16,6 +16,8 @@
         if (variables.length == 1) {
             // variable not categorical
             showLevel = false;
+            variableLevel = "";
+
             features.viewVariable = variableName;
             features.viewVariableLevel = undefined;
             features.render();

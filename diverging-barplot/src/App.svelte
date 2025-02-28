@@ -1,5 +1,6 @@
 <script lang="ts">
     import BarplotContainer from "./lib/BarplotContainer.svelte";
+    import Taxonomy from "./lib/Taxonomy.svelte";
     import { parseAllSlices } from "./util/parse";
     import features from "./state/features.svelte";
 
@@ -14,3 +15,5 @@
 {:catch error}
     <p>An error occurred: {error.message}</p>
 {/await}
+
+<Taxonomy />
