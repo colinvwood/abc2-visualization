@@ -4,13 +4,13 @@ import * as d3 from "d3";
 type PlotDimensions = {
     width: number;
     margin: number;
+    nodeWidth: number;
+    nodeHeight: number;
+    boxHeight: number;
+    boxWidth: number;
 };
 export class TaxonomyPlot {
-    dimensions: PlotDimensions = {
-        width: 1700,
-        margin: 50,
-    };
-
+    dimensions: PlotDimensions;
     root: d3.HierarchyNode<TaxonomyNode>;
     treeLayout: d3.TreeLayout<any>;
     link: d3.Link<any, any, any>;
@@ -18,9 +18,33 @@ export class TaxonomyPlot {
     constructor(root: d3.HierarchyNode<TaxonomyNode>) {
         this.hideAllChildren(root);
         this.root = root;
+
+        this.dimensions = this.getDimensions();
+
         this.treeLayout = this.createTreeLayout();
         this.link = this.createLinkGenerator();
+
         this.createSvgGroups();
+    }
+
+    getDimensions() {
+        const width = 1750;
+        const margin = 50;
+
+        const taxonomyDepth = this.root.height;
+        const nodeWidth = width / (taxonomyDepth + 1);
+        const nodeHeight = 30;
+
+        const dimensions: PlotDimensions = {
+            width: width,
+            margin: margin,
+            nodeHeight: nodeHeight,
+            nodeWidth: nodeWidth,
+            boxWidth: 0.8 * nodeWidth,
+            boxHeight: 0.8 * nodeHeight,
+        };
+
+        return dimensions;
     }
 
     hideAllChildren(root: d3.HierarchyNode<TaxonomyNode>) {
@@ -34,10 +58,9 @@ export class TaxonomyPlot {
     }
 
     createTreeLayout(): d3.TreeLayout<any> {
-        const taxonomyDepth = this.root.height;
-        const nodeWidth = this.dimensions.width / (taxonomyDepth + 1);
-        const nodeHeight = 20;
-        const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth]);
+        const treeLayout = d3
+            .tree()
+            .nodeSize([this.dimensions.nodeHeight, this.dimensions.nodeWidth]);
 
         return treeLayout;
     }
@@ -50,12 +73,10 @@ export class TaxonomyPlot {
     }
 
     createSvgGroups() {
-        const svg = d3
-            .select(".taxonomy svg")
-            .append("g")
-            .attr("class", "node-group");
+        const svg = d3.select(".taxonomy svg");
 
         svg.append("g").attr("class", "link-group");
+        svg.append("g").attr("class", "node-group");
     }
 
     addClickHandlers(selection: d3.Selection<any, any, any, any>) {
@@ -113,24 +134,47 @@ export class TaxonomyPlot {
             .attr("stroke-opacity", 1)
             .attr("fill-opacity", 1);
 
+        // draw taxon boxes
         enterSelection
-            .append("circle")
-            .attr("r", 3)
-            .attr("fill", "#555")
-            .attr("stroke-width", 10);
+            .append("rect")
+            .attr("height", this.dimensions.boxHeight)
+            .attr("width", this.dimensions.boxWidth)
+            .attr("stroke", "gray")
+            .attr("stroke-width", 2)
+            .attr("fill", "white")
+            .attr("opacity", 0.5)
+            .attr("rx", 2)
+            .attr("ry", 2);
 
+        // taxon names
         enterSelection
             .append("text")
             .text((d) => d.data.name)
-            .attr("dy", 4)
-            .attr("x", (d) => (d._children ? -5 : 5))
-            .attr("text-anchor", (d) => (d._children ? "end" : "start"))
+            .attr("dx", 10)
+            .attr("y", this.dimensions.boxHeight / 2)
+            .attr("dominant-baseline", "middle")
             .attr("stroke-linejoin", "round")
             .attr("stroke-width", 5)
             .attr("stroke", "white")
             .attr("paint-order", "stroke")
             .attr("font-weight", "bold")
             .attr("font-size", 14);
+
+        // left circle
+        enterSelection
+            .append("circle")
+            .attr("cx", 0)
+            .attr("cy", this.dimensions.boxHeight / 2)
+            .attr("r", 3)
+            .attr("fill", "#555");
+
+        // right circle; draw only if node has children
+        enterSelection
+            .append("circle")
+            .attr("cx", this.dimensions.boxWidth)
+            .attr("cy", this.dimensions.boxHeight / 2)
+            .attr("r", (d) => (d._children ? 3 : 0))
+            .attr("fill", "#555");
 
         this.addClickHandlers(enterSelection);
 
@@ -180,7 +224,19 @@ export class TaxonomyPlot {
         updateSelection
             .merge(enterSelection)
             .transition(transition)
-            .attr("d", this.link);
+            .attr("d", (d) => {
+                const sourceX = d.source.x! + this.dimensions.boxHeight / 2;
+                const targetX = d.target.x! + this.dimensions.boxHeight / 2;
+
+                const sourceY = d.source.y! + this.dimensions.boxWidth;
+                const targetY = d.target.y!;
+
+                const positions = {
+                    source: { x: sourceX, y: sourceY },
+                    target: { x: targetX, y: targetY },
+                };
+                return this.link(positions);
+            });
 
         // transition exiting links to parents' new
         updateSelection
