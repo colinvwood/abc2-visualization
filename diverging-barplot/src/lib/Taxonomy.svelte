@@ -11,13 +11,19 @@
         taxonomyPlot = new TaxonomyPlot(root);
 
         // draw plot
-        taxonomyPlot.render(null, root);
+        taxonomyPlot.render(root);
     });
 </script>
 
 <div class="taxonomy">
     <svg></svg>
+    <div class="selected-taxon"></div>
 </div>
 
 <style>
+    svg {
+        border: 2px solid lightgray;
+        border-radius: 5px;
+        min-height: 750px;
+    }
 </style>
