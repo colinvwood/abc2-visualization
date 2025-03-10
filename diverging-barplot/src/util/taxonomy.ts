@@ -9,6 +9,7 @@ type PlotDimensions = {
     boxHeight: number;
     boxWidth: number;
 };
+
 export class TaxonomyPlot {
     dimensions: PlotDimensions;
     root: d3.HierarchyNode<TaxonomyNode>;
@@ -16,15 +17,24 @@ export class TaxonomyPlot {
     link: d3.Link<any, any, any>;
 
     constructor(root: d3.HierarchyNode<TaxonomyNode>) {
-        this.hideAllChildren(root);
         this.root = root;
+        this.initTree(this.root);
 
         this.dimensions = this.getDimensions();
-
         this.treeLayout = this.createTreeLayout();
         this.link = this.createLinkGenerator();
 
-        this.createSvgGroups();
+        this.initSvg();
+    }
+
+    initTree(root: d3.HierarchyNode<TaxonomyNode>) {
+        root.descendants().forEach((node, i) => {
+            node._children = node.children;
+            node.id = i;
+            node.children = null;
+            node.expand = false;
+            node.keep = false;
+        });
     }
 
     getDimensions() {
@@ -47,16 +57,6 @@ export class TaxonomyPlot {
         return dimensions;
     }
 
-    hideAllChildren(root: d3.HierarchyNode<TaxonomyNode>) {
-        root.descendants().forEach((node, i) => {
-            node._children = node.children;
-            node.id = i;
-            node.children = null;
-        });
-
-        root.links().forEach((node, i) => {});
-    }
-
     createTreeLayout(): d3.TreeLayout<any> {
         const treeLayout = d3
             .tree()
@@ -72,18 +72,22 @@ export class TaxonomyPlot {
             .y((d) => d.x);
     }
 
-    createSvgGroups() {
+    initSvg() {
         const svg = d3.select(".taxonomy svg");
 
-        svg.append("g").attr("class", "link-group");
-        svg.append("g").attr("class", "node-group");
-    }
+        const zoomContainer = svg.append("g");
 
-    addClickHandlers(selection: d3.Selection<any, any, any, any>) {
-        selection.on("click", (event, d) => {
-            d.children = d.children ? null : d._children;
-            this.render(event, d);
-        });
+        zoomContainer.append("g").attr("class", "link-group");
+        zoomContainer.append("g").attr("class", "node-group");
+
+        const zoom = d3
+            .zoom()
+            .scaleExtent([0.5, 2])
+            .on("zoom", (event) => {
+                zoomContainer.attr("transform", event.transform);
+            });
+
+        svg.call(zoom).on("dblclick.zoom", null);
     }
 
     resizeSvg(): d3.Transition<any, any, any, any> {
@@ -114,6 +118,74 @@ export class TaxonomyPlot {
         return transition;
     }
 
+    addExpandHandlers() {
+        d3.selectAll(".expand-button").on("click", (event, d) => {
+            d.expand = !d.expand;
+            this.render(d);
+        });
+    }
+
+    addKeepHandlers() {
+        d3.selectAll(".keep-button").on("click", (event, d) => {
+            d.keep = !d.keep;
+
+            const fillColor = d.keep ? "orange" : "lightgray";
+            d3.select(event.currentTarget)
+                .select("rect")
+                .attr("fill", fillColor);
+
+            this.render(d);
+        });
+    }
+
+    drawButton(
+        selection: d3.Selection<any, any, any, any>,
+        type: "expand" | "keep",
+    ) {
+        let xTranslation;
+        let className;
+        let letter;
+        if (type == "expand") {
+            xTranslation = this.dimensions.boxWidth - this.dimensions.boxHeight;
+            className = "expand-button";
+            letter = "E";
+        } else if (type == "keep") {
+            xTranslation =
+                this.dimensions.boxWidth - 2 * this.dimensions.boxHeight;
+            className = "keep-button";
+            letter = "K";
+        } else {
+            throw new Error("Unrecognized button type.");
+        }
+
+        const button = selection
+            .append("g")
+            .attr("class", className)
+            .attr("transform", `translate(${xTranslation}, 2)`);
+
+        button
+            .append("rect")
+            .attr("width", this.dimensions.boxHeight - 4)
+            .attr("height", this.dimensions.boxHeight - 4)
+            .attr("fill", "lightgray");
+
+        if (type == "keep") {
+            button
+                .selectAll("rect")
+                .attr("fill", (d) => (d.keep ? "orange" : "lightgray"));
+        }
+
+        button
+            .append("text")
+            .text(letter)
+            .attr("x", this.dimensions.boxHeight / 2 - 2)
+            .attr("y", this.dimensions.boxHeight / 2 - 2)
+            .attr("dominant-baseline", "middle")
+            .attr("text-anchor", "middle")
+            .attr("font-size", 14)
+            .attr("dy", 2);
+    }
+
     drawNodes(
         nodes: d3.HierarchyNode<TaxonomyNode>[],
         source: d3.HierarchyNode<TaxonomyNode>,
@@ -134,22 +206,15 @@ export class TaxonomyPlot {
             .attr("stroke-opacity", 1)
             .attr("fill-opacity", 1);
 
-        // draw taxon boxes
-        enterSelection
-            .append("rect")
-            .attr("height", this.dimensions.boxHeight)
-            .attr("width", this.dimensions.boxWidth)
-            .attr("stroke", "gray")
-            .attr("stroke-width", 2)
-            .attr("fill", "white")
-            .attr("opacity", 0.5)
-            .attr("rx", 2)
-            .attr("ry", 2);
-
         // taxon names
         enterSelection
             .append("text")
-            .text((d) => d.data.name)
+            .text((d) => {
+                if (d.data.name.length > 18) {
+                    return d.data.name.slice(0, 15) + "...";
+                }
+                return d.data.name;
+            })
             .attr("dx", 10)
             .attr("y", this.dimensions.boxHeight / 2)
             .attr("dominant-baseline", "middle")
@@ -158,7 +223,20 @@ export class TaxonomyPlot {
             .attr("stroke", "white")
             .attr("paint-order", "stroke")
             .attr("font-weight", "bold")
-            .attr("font-size", 14);
+            .attr("font-size", 13);
+
+        // draw taxon boxes
+        enterSelection
+            .append("rect")
+            .attr("height", this.dimensions.boxHeight)
+            .attr("width", this.dimensions.boxWidth)
+            .attr("fill", "white")
+            .attr("stroke", "gray")
+            .attr("stroke-width", 2)
+            .attr("rx", 2)
+            .attr("ry", 2)
+            .attr("stroke-opacity", 1)
+            .attr("fill-opacity", 0);
 
         // left circle
         enterSelection
@@ -168,7 +246,7 @@ export class TaxonomyPlot {
             .attr("r", 3)
             .attr("fill", "#555");
 
-        // right circle; draw only if node has children
+        // right circle; visible only if node has children
         enterSelection
             .append("circle")
             .attr("cx", this.dimensions.boxWidth)
@@ -176,7 +254,23 @@ export class TaxonomyPlot {
             .attr("r", (d) => (d._children ? 3 : 0))
             .attr("fill", "#555");
 
-        this.addClickHandlers(enterSelection);
+        this.drawButton(enterSelection, "expand");
+        this.drawButton(enterSelection, "keep");
+
+        // add click event handlers
+        this.addExpandHandlers();
+        this.addKeepHandlers();
+
+        // color buttons
+        updateSelection
+            .selectAll(".expand-button")
+            .select("rect")
+            .attr("fill", (d) => (d.expand ? "lightblue" : "lightgray"));
+
+        updateSelection
+            .selectAll(".keep-button")
+            .select("rect")
+            .attr("fill", (d) => (d.keep ? "orange" : "lightgray"));
 
         // transition all nodes to their new positions
         updateSelection
@@ -238,7 +332,7 @@ export class TaxonomyPlot {
                 return this.link(positions);
             });
 
-        // transition exiting links to parents' new
+        // transition exiting links to parent's new position
         updateSelection
             .exit()
             .transition(transition)
@@ -249,7 +343,35 @@ export class TaxonomyPlot {
             });
     }
 
-    render(event: MouseEvent | null, source: d3.HierarchyNode<TaxonomyNode>) {
+    assignChildren(node: d3.HierarchyNode<TaxonomyNode>): boolean {
+        let keptDescendant = node.keep;
+        if (!node._children) {
+            return keptDescendant;
+        }
+
+        node.children = [];
+        for (let child of node._children) {
+            if (this.assignChildren(child)) {
+                node.children.push(child);
+                keptDescendant = true;
+            }
+        }
+
+        if (node.expand) {
+            node.children = node._children;
+        }
+
+        if (node.children!.length == 0) {
+            node.children = null;
+        }
+
+        return keptDescendant;
+    }
+
+    render(source: d3.HierarchyNode<TaxonomyNode>) {
+        // update visible children
+        this.assignChildren(this.root);
+
         // gather all expanded nodes and links
         const nodes = this.root.descendants().reverse();
         const links = this.root.links();
