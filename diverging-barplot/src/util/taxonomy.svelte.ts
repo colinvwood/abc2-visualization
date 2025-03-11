@@ -2,7 +2,6 @@ import { tsv } from "d3-fetch";
 import * as d3 from "d3";
 
 type PlotDimensions = {
-    width: number;
     margin: number;
     nodeWidth: number;
     nodeHeight: number;
@@ -15,6 +14,8 @@ export class TaxonomyPlot {
     root: d3.HierarchyNode<TaxonomyNode>;
     treeLayout: d3.TreeLayout<any>;
     link: d3.Link<any, any, any>;
+
+    selectedTaxon: TaxonomyNode | null = $state(null);
 
     constructor(root: d3.HierarchyNode<TaxonomyNode>) {
         this.root = root;
@@ -37,16 +38,28 @@ export class TaxonomyPlot {
         });
     }
 
+    getSvgDimensions() {
+        const svg = d3.select(".taxonomy svg");
+
+        if (svg.empty()) {
+            throw new Error("No svg element found.");
+        }
+
+        const svgRect = (svg.node() as any).getBoundingClientRect();
+
+        return { width: svgRect.width, height: svgRect.height };
+    }
+
     getDimensions() {
-        const width = 1750;
-        const margin = 50;
+        const margin = 25;
+
+        const { width: svgWidth, height: svgHeight } = this.getSvgDimensions();
 
         const taxonomyDepth = this.root.height;
-        const nodeWidth = width / (taxonomyDepth + 1);
+        const nodeWidth = svgWidth / (taxonomyDepth + 1);
         const nodeHeight = 30;
 
         const dimensions: PlotDimensions = {
-            width: width,
             margin: margin,
             nodeHeight: nodeHeight,
             nodeWidth: nodeWidth,
@@ -75,14 +88,25 @@ export class TaxonomyPlot {
     initSvg() {
         const svg = d3.select(".taxonomy svg");
 
+        // create groups for nodes and links
         const zoomContainer = svg.append("g");
-
         zoomContainer.append("g").attr("class", "link-group");
         zoomContainer.append("g").attr("class", "node-group");
 
+        // set svg view box
+        const { width: svgWidth, height: svgHeight } = this.getSvgDimensions();
+
+        svg.attr("viewBox", [
+            -this.dimensions.margin,
+            -svgHeight / 2,
+            svgWidth,
+            svgHeight,
+        ]);
+
+        // make svg zoomable & pannable
         const zoom = d3
             .zoom()
-            .scaleExtent([0.5, 2])
+            .scaleExtent([0.4, 2])
             .on("zoom", (event) => {
                 zoomContainer.attr("transform", event.transform);
             });
@@ -90,32 +114,11 @@ export class TaxonomyPlot {
         svg.call(zoom).on("dblclick.zoom", null);
     }
 
-    resizeSvg(): d3.Transition<any, any, any, any> {
-        // find lowest and highest node coordinates (along svg y axis)
-        let upperLimit = 0;
-        let lowerLimit = 0;
-        this.root.eachBefore((node) => {
-            if (node.x! < lowerLimit) lowerLimit = node.x!;
-            if (node.x! > upperLimit) upperLimit = node.x!;
+    addSelectHandlers() {
+        d3.selectAll(".taxonomy-node").on("click", (event, d) => {
+            console.log("select click");
+            this.selectedTaxon = d.data;
         });
-
-        const height = upperLimit - lowerLimit + 2 * this.dimensions.margin;
-
-        // resize the svg and readjust its viewbox to center the tree
-        const transition = d3
-            .select(".taxonomy svg")
-            .transition()
-            .duration(200)
-            .attr("width", this.dimensions.width)
-            .attr("height", height)
-            .attr("viewBox", [
-                -this.dimensions.margin,
-                lowerLimit - this.dimensions.margin,
-                this.dimensions.width,
-                height,
-            ]);
-
-        return transition;
     }
 
     addExpandHandlers() {
@@ -189,7 +192,6 @@ export class TaxonomyPlot {
     drawNodes(
         nodes: d3.HierarchyNode<TaxonomyNode>[],
         source: d3.HierarchyNode<TaxonomyNode>,
-        transition: d3.Transition<any, any, any, any>,
     ) {
         const updateSelection = d3
             .select(".node-group")
@@ -258,16 +260,25 @@ export class TaxonomyPlot {
         this.drawButton(enterSelection, "keep");
 
         // add click event handlers
+        this.addSelectHandlers();
         this.addExpandHandlers();
         this.addKeepHandlers();
 
         // color buttons
         updateSelection
+            .merge(enterSelection)
             .selectAll(".expand-button")
             .select("rect")
-            .attr("fill", (d) => (d.expand ? "lightblue" : "lightgray"));
+            .attr("fill", (d) => {
+                if (d.children && d.children.length == d._children.length) {
+                    return "lightblue";
+                } else {
+                    return "lightgray";
+                }
+            });
 
         updateSelection
+            .merge(enterSelection)
             .selectAll(".keep-button")
             .select("rect")
             .attr("fill", (d) => (d.keep ? "orange" : "lightgray"));
@@ -275,7 +286,8 @@ export class TaxonomyPlot {
         // transition all nodes to their new positions
         updateSelection
             .merge(enterSelection)
-            .transition(transition)
+            .transition()
+            .duration(200)
             .attr("transform", (d) => `translate(${d.y}, ${d.x})`)
             .attr("fill-opacity", 1)
             .attr("stroke-opacity", 1);
@@ -283,7 +295,8 @@ export class TaxonomyPlot {
         // transition exiting nodes to parents' new positions
         updateSelection
             .exit()
-            .transition(transition)
+            .transition()
+            .duration(200)
             .remove()
             .attr("transform", (d) => `translate(${source.y}, ${source.x})`)
             .attr("fill-opacity", 0)
@@ -293,7 +306,6 @@ export class TaxonomyPlot {
     drawLinks(
         links: d3.HierarchyLink<TaxonomyNode>[],
         source: d3.HierarchyNode<TaxonomyNode>,
-        transition: d3.Transition<any, any, any, any>,
     ) {
         const updateSelection = d3
             .select(".link-group")
@@ -317,7 +329,8 @@ export class TaxonomyPlot {
         // transition all links to their new shapes
         updateSelection
             .merge(enterSelection)
-            .transition(transition)
+            .transition()
+            .duration(200)
             .attr("d", (d) => {
                 const sourceX = d.source.x! + this.dimensions.boxHeight / 2;
                 const targetX = d.target.x! + this.dimensions.boxHeight / 2;
@@ -335,7 +348,8 @@ export class TaxonomyPlot {
         // transition exiting links to parent's new position
         updateSelection
             .exit()
-            .transition(transition)
+            .transition()
+            .duration(200)
             .remove()
             .attr("d", (d) => {
                 const parentNew = { x: source.x, y: source.y };
@@ -379,9 +393,9 @@ export class TaxonomyPlot {
         // assign coordinates to nodes
         this.treeLayout(this.root);
 
-        const transition = this.resizeSvg();
-        this.drawLinks(links, source, transition);
-        this.drawNodes(nodes, source, transition);
+        // const transition = this.resizeSvg();
+        this.drawLinks(links, source);
+        this.drawNodes(nodes, source);
 
         // store the current positions for the next render
         this.root.eachBefore((node) => {
