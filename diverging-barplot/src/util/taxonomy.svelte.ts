@@ -407,14 +407,16 @@ export class TaxonomyPlot {
 
 export class TaxonomyNode {
     name: string;
-    featureIDs: string[];
+    parent: TaxonomyNode | null;
     children: TaxonomyNode[];
+    featureIDs: string[];
     hierarchyNode: d3.HierarchyNode<TaxonomyNode> | null;
 
-    constructor(name: string) {
+    constructor(name: string, parent: TaxonomyNode | null) {
         this.name = name;
-        this.featureIDs = [];
+        this.parent = parent;
         this.children = [];
+        this.featureIDs = [];
         this.hierarchyNode = null;
     }
 
@@ -432,6 +434,33 @@ export class TaxonomyNode {
 
         return matchingChildren[0];
     }
+
+    getRoot(): TaxonomyNode {
+        let currentNode = this;
+        while (currentNode.parent != null) {
+            currentNode = currentNode.parent;
+        }
+
+        return currentNode;
+    }
+
+    getFeatureCount(): number {
+        return this.featureIDs.length;
+    }
+
+    getSubtreeFeatureCount(): number {
+        let subtreeCount = this.getFeatureCount();
+
+        for (let child of this.children) {
+            subtreeCount += child.getSubtreeFeatureCount();
+        }
+
+        return subtreeCount;
+    }
+
+    getTreeFeatureCount(): number {
+        return this.getRoot().getSubtreeFeatureCount();
+    }
 }
 
 /**
@@ -442,7 +471,7 @@ export async function parseTaxonomy(
 ): Promise<d3.HierarchyNode<TaxonomyNode>> {
     const taxonomyRecords = await tsv(taxonomyFilepath);
 
-    const root = new TaxonomyNode("root");
+    const root = new TaxonomyNode("root", null);
 
     for (let taxonRecord of taxonomyRecords) {
         const levelNames = taxonRecord["Taxon"]
@@ -452,7 +481,7 @@ export async function parseTaxonomy(
 
         let parentNode = root;
         for (let [levelIndex, levelName] of levelNames.entries()) {
-            const currentNode = new TaxonomyNode(levelName);
+            const currentNode = new TaxonomyNode(levelName, parentNode);
 
             // if this is the last level then it has a feature ID
             if (levelIndex == levelNames.length - 1) {
