@@ -6,7 +6,7 @@
     let taxonomyPlot: TaxonomyPlot | null = null;
     onMount(async () => {
         // parse taxonomy
-        const root = await parseTaxonomy("taxonomy.tsv");
+        const root = await parseTaxonomy("taxonomy-big.tsv");
 
         // create plot
         taxonomyPlot = new TaxonomyPlot(root);
@@ -19,9 +19,7 @@
 <div class="taxonomy">
     <svg></svg>
     <div class="taxonomy-controls">
-        <div class="selected-taxon">
-            <SelectedTaxon selectedTaxon={taxonomyPlot?.selectedTaxon} />
-        </div>
+        <SelectedTaxon {taxonomyPlot} />
         <div class="taxonomy-filter-controls"></div>
         <div class="taxonomy-filters"></div>
     </div>
@@ -49,21 +47,15 @@
         width: 18vw;
     }
 
-    .selected-taxon {
-        width: 100%;
-        height: 40%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-    }
     .taxonomy-filter-controls {
         width: 100%;
-        height: 28%;
+        height: 30%;
         border: 2px solid lightgray;
         border-radius: 5px;
     }
     .taxonomy-filters {
         width: 100%;
-        height: 28%;
+        height: 30%;
         border: 2px solid lightgray;
         border-radius: 5px;
     }

@@ -125,6 +125,8 @@ export class TaxonomyPlot {
         d3.selectAll(".expand-button").on("click", (event, d) => {
             d.expand = !d.expand;
             this.render(d);
+
+            event.stopPropagation();
         });
     }
 
@@ -138,6 +140,8 @@ export class TaxonomyPlot {
                 .attr("fill", fillColor);
 
             this.render(d);
+
+            event.stopPropagation();
         });
     }
 
@@ -436,12 +440,36 @@ export class TaxonomyNode {
     }
 
     getRoot(): TaxonomyNode {
-        let currentNode = this;
+        let currentNode: TaxonomyNode = this;
         while (currentNode.parent != null) {
             currentNode = currentNode.parent;
         }
 
         return currentNode;
+    }
+
+    getDescendants(): TaxonomyNode[] {
+        const descendants: TaxonomyNode[] = [this];
+        for (let child of this.children) {
+            descendants.push(...child.getDescendants());
+        }
+
+        return descendants;
+    }
+
+    findTaxa(name: string): TaxonomyNode[] {
+        const root = this.getRoot();
+        const descendants = root.getDescendants();
+
+        const matches = descendants.filter((descendant) => {
+            const index = descendant.name
+                .toLowerCase()
+                .indexOf(name.toLowerCase());
+
+            return index != -1;
+        });
+
+        return matches;
     }
 
     getFeatureCount(): number {
