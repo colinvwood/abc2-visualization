@@ -35,6 +35,7 @@ export class TaxonomyPlot {
             node.children = null;
             node.expand = false;
             node.keep = false;
+            node.match = false;
         });
     }
 
@@ -116,7 +117,6 @@ export class TaxonomyPlot {
 
     addSelectHandlers() {
         d3.selectAll(".taxonomy-node").on("click", (event, d) => {
-            console.log("select click");
             this.selectedTaxon = d.data;
         });
     }
@@ -234,15 +234,16 @@ export class TaxonomyPlot {
         // draw taxon boxes
         enterSelection
             .append("rect")
+            .attr("class", "taxon-box")
             .attr("height", this.dimensions.boxHeight)
             .attr("width", this.dimensions.boxWidth)
-            .attr("fill", "white")
+            .attr("fill", (d) => (d.data.searchMatch ? "green" : "white"))
             .attr("stroke", "gray")
             .attr("stroke-width", 2)
             .attr("rx", 2)
             .attr("ry", 2)
             .attr("stroke-opacity", 1)
-            .attr("fill-opacity", 0);
+            .attr("fill-opacity", (d) => (d.data.searchMatch ? 0.2 : 0));
 
         // left circle
         enterSelection
@@ -259,6 +260,12 @@ export class TaxonomyPlot {
             .attr("cy", this.dimensions.boxHeight / 2)
             .attr("r", (d) => (d._children ? 3 : 0))
             .attr("fill", "#555");
+
+        // color search matches
+        updateSelection
+            .selectAll(".taxon-box")
+            .attr("fill", (d) => (d.data.searchMatch ? "green" : "white"))
+            .attr("fill-opacity", (d) => (d.data.searchMatch ? 0.2 : 0));
 
         this.drawButton(enterSelection, "expand");
         this.drawButton(enterSelection, "keep");
@@ -362,7 +369,9 @@ export class TaxonomyPlot {
     }
 
     assignChildren(node: d3.HierarchyNode<TaxonomyNode>): boolean {
-        let keptDescendant = node.keep;
+        let keptDescendant = node.keep || node.data.searchMatch;
+
+        // leaf
         if (!node._children) {
             return keptDescendant;
         }
@@ -415,6 +424,7 @@ export class TaxonomyNode {
     children: TaxonomyNode[];
     featureIDs: string[];
     hierarchyNode: d3.HierarchyNode<TaxonomyNode> | null;
+    searchMatch: boolean = false;
 
     constructor(name: string, parent: TaxonomyNode | null) {
         this.name = name;
@@ -488,6 +498,14 @@ export class TaxonomyNode {
 
     getTreeFeatureCount(): number {
         return this.getRoot().getSubtreeFeatureCount();
+    }
+
+    clearSearchMatches() {
+        this.getRoot()
+            .getDescendants()
+            .forEach((n) => {
+                n.searchMatch = false;
+            });
     }
 }
 

@@ -30,13 +30,9 @@
 
     function handleSearch(event: KeyboardEvent) {
         if (event.key != "Enter") return;
+        if (searchString == "") return;
 
         searchString = searchString.trim();
-
-        if (searchString == "") {
-            searchError = "";
-            return;
-        }
 
         const matches = taxonomyPlot.root.data.findTaxa(searchString);
 
@@ -52,20 +48,30 @@
         searchError = "";
 
         for (let match of matches) {
-            match.hierarchyNode.keep = true;
+            match.searchMatch = true;
         }
+        taxonomyPlot.render(taxonomyPlot.root);
+    }
+
+    function clearSearch() {
+        searchString = "";
+        searchError = "";
+        taxonomyPlot.root.data.clearSearchMatches();
         taxonomyPlot.render(taxonomyPlot.root);
     }
 </script>
 
 <div class="container">
-    <input
-        type="text"
-        name="taxon"
-        placeholder="Search..."
-        bind:value={searchString}
-        onkeydown={handleSearch}
-    />
+    <div id="search-bar">
+        <input
+            type="text"
+            name="taxon"
+            placeholder="Search..."
+            bind:value={searchString}
+            onkeydown={handleSearch}
+        />
+        <button onclick={clearSearch}>Clear</button>
+    </div>
     {#if searchError != ""}
         <div id="search-error" transition:slide>
             <p>{searchError}</p>
@@ -99,8 +105,13 @@
         align-items: center;
     }
 
+    #search-bar {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
     .container input {
-        width: 80%;
+        width: 75%;
         border: 2px solid lightgray;
         border-radius: 5px;
     }
@@ -116,5 +127,6 @@
         background-color: #fca9a9;
         border-radius: 5px;
         padding: 3px;
+        max-width: 90%;
     }
 </style>
