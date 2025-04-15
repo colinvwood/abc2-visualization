@@ -10,10 +10,12 @@ export type VariableRecord = {
 
 export class FeatureRecord {
     featureId: string;
+    classification: string | null;
     variables: Map<string, VariableRecord> = new Map();
 
-    constructor(featureId: string) {
+    constructor(featureId: string, classification: string | null = null) {
         this.featureId = featureId;
+        this.classification = classification;
     }
 
     /**
@@ -109,6 +111,7 @@ export type ViewRecord = {
     se: number;
     p: number;
     q: number;
+    classification: string;
 };
 
 type Filter = {
@@ -235,12 +238,16 @@ export class FeatureRecords {
                 );
             }
 
+            let classification = record.classification;
+            if (classification == null) classification = "N/A";
+
             return {
                 featureId: record.featureId,
                 lfc: variable.lfc!,
                 se: variable.se!,
                 p: variable.p!,
                 q: variable.q!,
+                classification,
             };
         });
 

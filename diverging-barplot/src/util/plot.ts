@@ -225,7 +225,7 @@ export class DivergingBarplot {
         const handleMouseover = (e: any, d: any) => {
             const tooltipData = [
                 `feature ID: ${d.featureId}`,
-                `classification: todo`,
+                `classification: ${d.classification}`,
                 `lfc: ${d.lfc}`,
                 `se: ${d.se}`,
                 `p-value: ${d.p}`,

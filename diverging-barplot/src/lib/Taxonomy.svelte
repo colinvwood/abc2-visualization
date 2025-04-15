@@ -3,18 +3,16 @@
     import SelectedTaxon from "./SelectedTaxon.svelte";
     import TaxonomyFilter from "./TaxonomyFilter.svelte";
     import TaxonomyFilterList from "./TaxonomyFilterList.svelte";
-    import {
-        TaxonomyPlot,
-        TaxonomyFilters,
-        parseTaxonomy,
-    } from "../util/taxonomy.svelte";
+    import { TaxonomyPlot, TaxonomyFilters } from "../util/taxonomy.svelte";
 
-    let taxonomyPlot: TaxonomyPlot | null = null;
-    let taxonomyFilters: TaxonomyFilters | null = null;
-    onMount(async () => {
-        const root = await parseTaxonomy("taxonomy-big.tsv");
-        taxonomyPlot = new TaxonomyPlot(root);
-        taxonomyPlot.render(root);
+    const { rootTaxon } = $props();
+
+    let taxonomyPlot: TaxonomyPlot | null = $state(null);
+    let taxonomyFilters: TaxonomyFilters | null = $state(null);
+
+    onMount(() => {
+        taxonomyPlot = new TaxonomyPlot(rootTaxon);
+        taxonomyPlot.render(rootTaxon);
 
         taxonomyFilters = new TaxonomyFilters(taxonomyPlot.root.data);
     });

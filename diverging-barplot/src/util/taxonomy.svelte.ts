@@ -270,15 +270,11 @@ export class TaxonomyPlot {
             .attr("cx", this.dimensions.boxWidth)
             .attr("cy", this.dimensions.boxHeight / 2)
             .attr("r", (d) => {
-                if (!d._children) return 0;
-
-                let kept;
+                let kept = d._children;
                 if (this.hideFiltered) {
-                    kept = d._children.filter((n) => !n.data.filtered);
-                } else {
-                    kept = d._children;
+                    kept = d._children?.filter((n) => !n.data.filtered);
                 }
-                if (kept.length > 0) {
+                if (kept && kept.length > 0) {
                     return 3;
                 }
                 return 0;
@@ -286,13 +282,11 @@ export class TaxonomyPlot {
             .attr("fill", "#555");
 
         updateSelection.selectAll(".right-circle").attr("r", (d) => {
-            let kept;
+            let kept = d._children;
             if (this.hideFiltered) {
-                kept = d._children.filter((n) => !n.data.filtered);
-            } else {
-                kept = d._children;
+                kept = d._children?.filter((n) => !n.data.filtered);
             }
-            if (kept.length > 0) {
+            if (kept && kept.length > 0) {
                 return 3;
             }
             return 0;
@@ -534,6 +528,42 @@ export class TaxonomyNode {
         });
 
         return matches;
+    }
+
+    findTaxonById(id: string): TaxonomyNode | null {
+        const descendants = this.getRoot().getDescendants();
+        const matches = descendants.filter((descendant) => {
+            return descendant.featureIDs.indexOf(id) != -1;
+        });
+
+        if (matches.length == 0) {
+            return null;
+        } else if (matches.length == 1) {
+            return matches[0];
+        } else {
+            throw new Error(
+                "More than one taxonomy node with the same feature ID.",
+            );
+        }
+    }
+
+    getAncestors(): TaxonomyNode[] {
+        const ancestors = [];
+        let currentNode: TaxonomyNode = this;
+        while (currentNode.parent != null) {
+            ancestors.push(currentNode);
+            currentNode = currentNode.parent;
+        }
+
+        return ancestors;
+    }
+
+    getFullTaxonString(): string {
+        const ancestorNames = this.getAncestors()
+            .reverse()
+            .map((a) => a.name);
+
+        return ancestorNames.join(";");
     }
 
     getFeatureCount(): number {

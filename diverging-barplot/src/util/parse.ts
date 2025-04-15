@@ -6,6 +6,8 @@ import {
     type VariableRecord,
 } from "../state/features.svelte";
 
+import { TaxonomyNode } from "./taxonomy.svelte";
+
 type JSONLHeaderField = {
     name: string;
     type: string | null;
@@ -32,11 +34,12 @@ type JSONLFeatureRecord = {
 export async function parseAllSlices(
     slicesDir: string,
     featureRecords: FeatureRecords,
+    rootTaxon: TaxonomyNode | null = null,
 ): Promise<any> {
     const slices = ["lfc", "p", "q", "se"];
     for (let slice of slices) {
         const sliceFilepath = `${slicesDir}/${slice}.jsonl`;
-        await parseSlice(sliceFilepath, featureRecords);
+        await parseSlice(sliceFilepath, featureRecords, rootTaxon);
     }
 
     return Promise.resolve();
@@ -48,6 +51,7 @@ export async function parseAllSlices(
 export async function parseSlice(
     sliceFilepath: string,
     featureRecords: FeatureRecords,
+    rootTaxon: TaxonomyNode | null,
 ): Promise<undefined> {
     // open file, convert to json
     const textData: string = await text(sliceFilepath);
@@ -71,7 +75,12 @@ export async function parseSlice(
     const sliceName = sliceFilepath.split("/").pop()!.replace(".jsonl", "");
 
     jsonFeatureRecords.forEach((record) => {
-        const feature = parseJSONLFeatureRecord(record, header, sliceName);
+        const feature = parseJSONLFeatureRecord(
+            record,
+            header,
+            sliceName,
+            rootTaxon,
+        );
         featureRecords.addFeature(feature);
     });
 }
@@ -84,8 +93,12 @@ export function parseJSONLFeatureRecord(
     jsonRecord: JSONLFeatureRecord,
     header: JSONLHeader,
     slice: string,
+    rootTaxon: TaxonomyNode | null,
 ): FeatureRecord {
-    const featureRecord = new FeatureRecord(jsonRecord.taxon);
+    const taxonName = rootTaxon
+        ?.findTaxonById(jsonRecord.taxon)
+        ?.getFullTaxonString();
+    const featureRecord = new FeatureRecord(jsonRecord.taxon, taxonName);
 
     for (let column of Object.keys(jsonRecord)) {
         if (column == "taxon") continue;
