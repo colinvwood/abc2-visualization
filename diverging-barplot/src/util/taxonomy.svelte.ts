@@ -16,6 +16,7 @@ export class TaxonomyPlot {
     link: d3.Link<any, any, any>;
 
     selectedTaxon: TaxonomyNode | null = $state(null);
+    hideFiltered: boolean = false;
 
     constructor(root: d3.HierarchyNode<TaxonomyNode>) {
         this.root = root;
@@ -237,13 +238,22 @@ export class TaxonomyPlot {
             .attr("class", "taxon-box")
             .attr("height", this.dimensions.boxHeight)
             .attr("width", this.dimensions.boxWidth)
-            .attr("fill", (d) => (d.data.searchMatch ? "green" : "white"))
+            .attr("fill", (d) => {
+                if (d.data.searchMatch) return "green";
+                if (d.data.filtered) return "red";
+                return "white";
+            })
             .attr("stroke", "gray")
             .attr("stroke-width", 2)
             .attr("rx", 2)
             .attr("ry", 2)
             .attr("stroke-opacity", 1)
-            .attr("fill-opacity", (d) => (d.data.searchMatch ? 0.2 : 0));
+            .attr("fill-opacity", (d) => {
+                if (d.data.searchMatch || d.data.filtered) {
+                    return 0.2;
+                }
+                return 0;
+            });
 
         // left circle
         enterSelection
@@ -256,16 +266,52 @@ export class TaxonomyPlot {
         // right circle; visible only if node has children
         enterSelection
             .append("circle")
+            .attr("class", "right-circle")
             .attr("cx", this.dimensions.boxWidth)
             .attr("cy", this.dimensions.boxHeight / 2)
-            .attr("r", (d) => (d._children ? 3 : 0))
+            .attr("r", (d) => {
+                if (!d._children) return 0;
+
+                let kept;
+                if (this.hideFiltered) {
+                    kept = d._children.filter((n) => !n.data.filtered);
+                } else {
+                    kept = d._children;
+                }
+                if (kept.length > 0) {
+                    return 3;
+                }
+                return 0;
+            })
             .attr("fill", "#555");
+
+        updateSelection.selectAll(".right-circle").attr("r", (d) => {
+            let kept;
+            if (this.hideFiltered) {
+                kept = d._children.filter((n) => !n.data.filtered);
+            } else {
+                kept = d._children;
+            }
+            if (kept.length > 0) {
+                return 3;
+            }
+            return 0;
+        });
 
         // color search matches
         updateSelection
             .selectAll(".taxon-box")
-            .attr("fill", (d) => (d.data.searchMatch ? "green" : "white"))
-            .attr("fill-opacity", (d) => (d.data.searchMatch ? 0.2 : 0));
+            .attr("fill", (d) => {
+                if (d.data.searchMatch) return "green";
+                if (d.data.filtered) return "red";
+                return "white";
+            })
+            .attr("fill-opacity", (d) => {
+                if (d.data.searchMatch || d.data.filtered) {
+                    return 0.2;
+                }
+                return 0;
+            });
 
         this.drawButton(enterSelection, "expand");
         this.drawButton(enterSelection, "keep");
@@ -371,6 +417,10 @@ export class TaxonomyPlot {
     assignChildren(node: d3.HierarchyNode<TaxonomyNode>): boolean {
         let keptDescendant = node.keep || node.data.searchMatch;
 
+        if (this.hideFiltered && node.data.filtered) {
+            return false;
+        }
+
         // leaf
         if (!node._children) {
             return keptDescendant;
@@ -386,10 +436,13 @@ export class TaxonomyPlot {
 
         if (node.expand) {
             node.children = node._children;
+            if (this.hideFiltered) {
+                node.children = node.children.filter((n) => !n.data.filtered);
+            }
         }
 
         if (node.children!.length == 0) {
-            node.children = null;
+            node.children = undefined;
         }
 
         return keptDescendant;
@@ -425,6 +478,7 @@ export class TaxonomyNode {
     featureIDs: string[];
     hierarchyNode: d3.HierarchyNode<TaxonomyNode> | null;
     searchMatch: boolean = false;
+    filtered: boolean = false;
 
     constructor(name: string, parent: TaxonomyNode | null) {
         this.name = name;
@@ -476,7 +530,7 @@ export class TaxonomyNode {
                 .toLowerCase()
                 .indexOf(name.toLowerCase());
 
-            return index != -1;
+            return index != -1 && !descendant.filtered;
         });
 
         return matches;
@@ -506,6 +560,45 @@ export class TaxonomyNode {
             .forEach((n) => {
                 n.searchMatch = false;
             });
+    }
+}
+
+export class TaxonomyFilters {
+    filters: ((node: TaxonomyNode) => boolean)[] = $state([]);
+    taxonomyRoot: TaxonomyNode;
+
+    constructor(taxonomyRoot: TaxonomyNode) {
+        this.filters = [];
+        this.taxonomyRoot = taxonomyRoot;
+    }
+
+    addFeatureCountFilter(featureCount: number) {
+        const filter = (node: TaxonomyNode) => {
+            return node.getSubtreeFeatureCount() < featureCount;
+        };
+
+        filter.type = "feature-count";
+        filter.value = featureCount;
+
+        this.filters.push(filter);
+    }
+
+    removeFilter(type: string, value: number) {
+        this.filters = this.filters.filter((f) => {
+            return !(f.type == type && f.value == value);
+        });
+    }
+
+    applyFilters() {
+        const nodes = this.taxonomyRoot.getDescendants();
+
+        nodes.forEach((node) => (node.filtered = false));
+
+        for (let filter of this.filters) {
+            nodes.forEach((node) => {
+                node.filtered = filter(node);
+            });
+        }
     }
 }
 

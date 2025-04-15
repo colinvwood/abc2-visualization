@@ -40,12 +40,14 @@
             searchError = "No matches found!";
             return;
         }
-        if (matches.length > 5) {
-            searchError = "More than 5 matches! Try a more specific search.";
+        if (matches.length > 10) {
+            searchError = "More than 10 matches! Try a more specific search.";
             return;
         }
 
         searchError = "";
+
+        taxonomyPlot.selectedTaxon = matches[0];
 
         for (let match of matches) {
             match.searchMatch = true;
@@ -61,7 +63,8 @@
     }
 </script>
 
-<div class="container">
+<div id="container">
+    <h1>Taxon Info</h1>
     <div id="search-bar">
         <input
             type="text"
@@ -93,9 +96,9 @@
 </div>
 
 <style>
-    .container {
+    #container {
         width: 100%;
-        height: 30%;
+        height: 32%;
         border: 2px solid lightgray;
         border-radius: 5px;
 
@@ -104,25 +107,27 @@
         justify-content: space-around;
         align-items: center;
     }
-
+    h1 {
+        margin: 0;
+        padding: 0;
+        font-size: 16px;
+    }
     #search-bar {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
     }
-    .container input {
+    input {
         width: 75%;
         border: 2px solid lightgray;
         border-radius: 5px;
     }
-
-    .container p {
+    p {
         margin: 0;
         padding: 0;
         padding-right: 3%;
         padding-left: 3%;
     }
-
     #search-error {
         background-color: #fca9a9;
         border-radius: 5px;

@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import Barplot from "./Barplot.svelte";
     import BarplotControls from "./BarplotControls.svelte";
     import features from "../state/features.svelte";

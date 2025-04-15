@@ -17,23 +17,22 @@
     function addFilter() {
         // handle errors
         if (!filterInfo.slice) {
-            errorMessage = "Please enter a input for slice.";
+            errorMessage = "Please enter an input for slice.";
             return;
         }
         if (!filterInfo.relationship) {
-            errorMessage = "Please enter a input for the relationship.";
+            errorMessage = "Please enter an input for the relationship.";
             return;
         }
         filterInfo.value = filterInfo.value.trim();
         if (!filterInfo.value) {
-            errorMessage = "Please enter a input for the value.";
+            errorMessage = "Please enter an input for the value.";
             return;
         }
 
         const valueAsNumber = parseFloat(filterInfo.value);
         if (isNaN(valueAsNumber)) {
-            errorMessage =
-                "Please enter a valid number as input for the value.";
+            errorMessage = "Please enter a valid number.";
             return;
         }
 

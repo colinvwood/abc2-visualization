@@ -1,18 +1,22 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import SelectedTaxon from "./SelectedTaxon.svelte";
-    import { TaxonomyPlot, parseTaxonomy } from "../util/taxonomy.svelte";
+    import TaxonomyFilter from "./TaxonomyFilter.svelte";
+    import TaxonomyFilterList from "./TaxonomyFilterList.svelte";
+    import {
+        TaxonomyPlot,
+        TaxonomyFilters,
+        parseTaxonomy,
+    } from "../util/taxonomy.svelte";
 
     let taxonomyPlot: TaxonomyPlot | null = null;
+    let taxonomyFilters: TaxonomyFilters | null = null;
     onMount(async () => {
-        // parse taxonomy
         const root = await parseTaxonomy("taxonomy-big.tsv");
-
-        // create plot
         taxonomyPlot = new TaxonomyPlot(root);
-
-        // draw plot
         taxonomyPlot.render(root);
+
+        taxonomyFilters = new TaxonomyFilters(taxonomyPlot.root.data);
     });
 </script>
 
@@ -20,8 +24,8 @@
     <svg></svg>
     <div class="taxonomy-controls">
         <SelectedTaxon {taxonomyPlot} />
-        <div class="taxonomy-filter-controls"></div>
-        <div class="taxonomy-filters"></div>
+        <TaxonomyFilter {taxonomyPlot} {taxonomyFilters} />
+        <TaxonomyFilterList {taxonomyPlot} {taxonomyFilters} />
     </div>
 </div>
 
@@ -31,32 +35,17 @@
         flex-direction: row;
         justify-content: space-around;
     }
-
     svg {
         height: 70vh;
         width: 80vw;
         border: 2px solid lightgray;
         border-radius: 5px;
     }
-
     .taxonomy-controls {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         align-items: center;
         width: 18vw;
-    }
-
-    .taxonomy-filter-controls {
-        width: 100%;
-        height: 30%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-    }
-    .taxonomy-filters {
-        width: 100%;
-        height: 30%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
     }
 </style>
