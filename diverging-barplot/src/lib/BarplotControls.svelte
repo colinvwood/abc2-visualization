@@ -1,50 +1,134 @@
 <script lang="ts">
-    import Filters from "./Filters.svelte";
-    import VariableSelector from "./VariableSelector.svelte";
-    import features from "../state/features.svelte";
+    import features from "../util/features";
     import plot from "../util/plot";
 
-    // rerender feature view when filters change
-    $effect(() => {
-        features.filters;
+    const variables = features.getAllVariables();
+    const uniqueVariableNames = Array.from(
+        new Set(variables.map((v) => v.name)),
+    );
+
+    let variableName = $state("");
+    let variableLevel = $state("");
+    let showLevel = $state(false);
+    let levelNames = $state<string[]>([]);
+
+    function handleNameChange() {
+        const variables = features.getVariablesWithName(variableName);
+
+        if (variables.length == 1) {
+            // variable not categorical
+            showLevel = false;
+            variableLevel = "";
+
+            features.viewVariable = variableName;
+            features.viewVariableLevel = null;
+
+            features.render();
+            plot.updateData(features.view);
+        } else {
+            // categorical variable
+            showLevel = true;
+            levelNames = variables.map((v) => v.level) as string[];
+        }
+    }
+
+    function handleLevelChange() {
+        // update features and render
+        features.viewVariable = variableName;
+        features.viewVariableLevel = variableLevel;
+
         features.render();
-    });
+        plot.updateData(features.view);
+    }
 </script>
 
-<div class="controls-container">
-    <div class="header-container">
-        <p>Plot Controls</p>
+<div id="container">
+    <div id="variable-selector">
+        <h1>Model Variable and Level:</h1>
+        <div class="variable-input">
+            <label for="variable">Name:</label>
+            <select
+                name="variable"
+                id="variable"
+                bind:value={variableName}
+                onchange={handleNameChange}
+            >
+                {#each uniqueVariableNames as name}
+                    <option value={name}>{name}</option>
+                {/each}
+            </select>
+        </div>
+        <div class="variable-input">
+            <label for="level">Level:</label>
+            <select
+                name="level"
+                id="level"
+                bind:value={variableLevel}
+                onchange={handleLevelChange}
+                disabled={!showLevel}
+            >
+                {#each levelNames as name}
+                    <option value={name}>{name}</option>
+                {/each}
+            </select>
+        </div>
     </div>
-    <div class="bar-adjustor-container">
-        <button onclick={() => plot.increaseBarThickness()}>
-            Bar Thickness +
-        </button>
-        <button onclick={() => plot.decreaseBarThickness()}>
-            Bar Thickness -
-        </button>
+    <div id="bar-adjustors">
+        <p>Bar Thickness</p>
+        <button onclick={() => plot.decreaseBarThickness()}>-</button>
+        <button onclick={() => plot.increaseBarThickness()}>+</button>
     </div>
-
-    <VariableSelector />
-
-    <Filters />
 </div>
 
 <style>
-    .controls-container {
-        grid-column: 3 / 4;
-        grid-row: 2 / 3;
+    #container {
+        width: 100%;
+        height: 35%;
+        border: 2px solid lightgray;
+        border-radius: 5px;
 
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
-        align-items: stretch;
-        padding: 10px;
+        justify-content: space-around;
+        align-items: center;
     }
-
-    .bar-adjustor-container {
+    #bar-adjustors {
         display: flex;
         flex-direction: row;
+        justify-content: center;
+        align-items: center;
+    }
+    #bar-adjustors p {
+        margin: 0;
+        padding: 0;
+        margin-right: 10px;
+    }
+    #bar-adjustors button {
+        margin-left: 5px;
+        width: 25px;
+        height: 25px;
+    }
+    #variable-selector {
+        display: flex;
+        flex-direction: column;
         justify-content: space-around;
+        align-items: center;
+    }
+    #variable-selector h1 {
+        margin: 0;
         margin-bottom: 15px;
+        padding: 0;
+        font-size: 16px;
+    }
+
+    .variable-input {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        width: 75%;
+    }
+    .variable-input select {
+        width: 40%;
     }
 </style>

@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import features from "../state/features.svelte";
+    import BarplotControls from "./BarplotControls.svelte";
+    import BarplotFilters from "./BarplotFilters.svelte";
+    import features from "../util/features";
     import plot from "../util/plot";
 
     // render features
@@ -12,30 +14,42 @@
         plot.init(features.view);
         plot.drawPlot(false);
     });
-
-    // rerender plot when feature view changes
-    $effect(() => {
-        plot.updateData(features.view);
-
-        if (features.view.length > 0) {
-            plot.showPlot();
-            plot.drawPlot(true);
-        } else {
-            plot.hidePlot();
-        }
-    });
 </script>
 
-<div class="svg-container">
-    <svg></svg>
+<div id="container">
+    <div id="barplot-svg-container">
+        <svg></svg>
+    </div>
+    <div id="sidebar">
+        <BarplotControls />
+        <BarplotFilters />
+    </div>
 </div>
 
 <style>
-    .svg-container {
-        grid-column: 2 / 3;
-        grid-row: 2 / 3;
+    #container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        min-height: 500px;
+        height: 50vh;
+        width: 100%;
+    }
+    #barplot-svg-container {
+        overflow: scroll;
+        border: 2px solid lightgray;
+        border-radius: 5px;
+        height: 100%;
+        width: 75%;
     }
     svg {
         width: 100%;
+    }
+    #sidebar {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        width: 23%;
     }
 </style>

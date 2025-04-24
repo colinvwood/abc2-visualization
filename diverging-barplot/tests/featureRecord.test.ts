@@ -1,5 +1,5 @@
 import { describe, test, assert } from "vitest";
-import { FeatureRecord, FeatureRecords } from "../src/state/features.svelte";
+import { FeatureRecord, FeatureRecords } from "../src/util/features";
 
 describe("FeatureRecord class", () => {
     const feature = new FeatureRecord("abc123");

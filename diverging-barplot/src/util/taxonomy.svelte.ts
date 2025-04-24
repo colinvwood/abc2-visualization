@@ -41,7 +41,7 @@ export class TaxonomyPlot {
     }
 
     getSvgDimensions() {
-        const svg = d3.select(".taxonomy svg");
+        const svg = d3.select("#taxonomy-svg-container svg");
 
         if (svg.empty()) {
             throw new Error("No svg element found.");
@@ -88,7 +88,7 @@ export class TaxonomyPlot {
     }
 
     initSvg() {
-        const svg = d3.select(".taxonomy svg");
+        const svg = d3.select("#taxonomy-svg-container svg");
 
         // create groups for nodes and links
         const zoomContainer = svg.append("g");

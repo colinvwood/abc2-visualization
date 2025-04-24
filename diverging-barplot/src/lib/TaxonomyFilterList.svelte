@@ -1,4 +1,7 @@
 <script lang="ts">
+    import features from "../util/features";
+    import plot from "../util/plot";
+
     const { taxonomyPlot, taxonomyFilters } = $props();
 
     let plotSync = $state(false);
@@ -13,8 +16,16 @@
     }
 
     function handlePlotSync() {
-        // todo
-        return;
+        if (plotSync) {
+            features.rootTaxon = taxonomyPlot.root.data;
+            features.render();
+            plot.updateData(features.view);
+        } else {
+            console.log("unsyncing");
+            features.rootTaxon = null;
+            features.render();
+            plot.updateData(features.view);
+        }
     }
 
     function handleHideFiltered() {

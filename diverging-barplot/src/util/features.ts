@@ -1,3 +1,5 @@
+import { TaxonomyNode } from "./taxonomy.svelte";
+
 export type VariableRecord = {
     name: string;
     lfc?: number;
@@ -123,12 +125,13 @@ type Filter = {
 
 export class FeatureRecords {
     records: FeatureRecord[] = [];
+    rootTaxon: TaxonomyNode | null = null;
 
-    view = $state<ViewRecord[]>([]);
-    viewVariable = $state<string>("");
-    viewVariableLevel = $state<string | undefined>(undefined);
+    view: ViewRecord[] = [];
+    viewVariable: string = "";
+    viewVariableLevel: string | null = null;
 
-    filters = $state<Filter[]>([]);
+    filters: Filter[] = [];
 
     /*
      * Return the feature with id `featureId`, or undefined if not found.
@@ -199,7 +202,6 @@ export class FeatureRecords {
      * Returns all variable records in the feature dataset. Accessing only the
      * first feature record is sufficient because all features have the same
      * set of variable records. Removes the intercept variable record.
-     *
      */
     getAllVariables(): VariableRecord[] {
         const variables = Array.from(this.records[0].variables.values());
@@ -219,8 +221,26 @@ export class FeatureRecords {
      * `viewVariable`.
      */
     render() {
-        // apply all filters
-        let filtered: FeatureRecord[] = this.records;
+        let filtered: FeatureRecord[] = [];
+
+        // apply taxonomyFilters if present
+        if (this.rootTaxon != null) {
+            for (let record of this.records) {
+                const node = this.rootTaxon.findTaxonById(record.featureId);
+                if (node == null) {
+                    throw new Error(
+                        `Could not find taxon with id ${record.featureId}`,
+                    );
+                }
+                if (!node.filtered) {
+                    filtered.push(record);
+                }
+            }
+        } else {
+            filtered = this.records;
+        }
+
+        // apply slice filters
         for (let f of Object.values(this.filters)) {
             filtered = filtered.filter(f);
         }

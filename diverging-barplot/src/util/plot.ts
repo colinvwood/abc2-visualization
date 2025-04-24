@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { type ViewRecord } from "../state/features.svelte";
+import { type ViewRecord } from "../util/features";
 
 type PlotDimensions = {
     svgWidth: number;
@@ -63,9 +63,17 @@ export class DivergingBarplot {
     }
 
     /**
+     * Updates the plotted data and redraws the plot if the data is non-empty,
+     * otherwise hides the plot.
      */
     updateData(data: ViewRecord[]) {
         this.data = data;
+        if (data.length > 0) {
+            this.showPlot();
+            this.drawPlot(true);
+        } else {
+            this.hidePlot();
+        }
     }
 
     /**
@@ -82,14 +90,14 @@ export class DivergingBarplot {
     /**
      */
     increaseBarThickness() {
-        this.dimensions.barHeight *= 1.05;
+        this.dimensions.barHeight *= 1.1;
         this.drawPlot(true);
     }
 
     /**
      */
     decreaseBarThickness() {
-        this.dimensions.barHeight *= 0.95;
+        this.dimensions.barHeight *= 0.9;
         this.drawPlot(true);
     }
 

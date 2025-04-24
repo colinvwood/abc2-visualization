@@ -1,14 +1,15 @@
 <script lang="ts">
-    import Filter from "./Filter.svelte";
-
     import { slide } from "svelte/transition";
-    import features from "../state/features.svelte";
+    import features from "../util/features";
+    import plot from "../util/plot";
 
     let filterInfo = $state({
         slice: "",
         relationship: "",
         value: "",
     });
+
+    let filters = $state([]);
 
     let showAdder = $state(false);
 
@@ -42,6 +43,11 @@
             filterInfo.relationship,
             valueAsNumber,
         );
+        filters = features.filters;
+
+        // rerender the viewed features and the plot
+        features.render();
+        plot.updateData(features.view);
 
         // clear local state
         errorMessage = "";
@@ -54,17 +60,33 @@
         // hide ourselves
         showAdder = false;
     }
+
+    function getSymbol(relationship: string) {
+        if (relationship == "gt") return ">";
+        if (relationship == "ge") return ">=";
+        if (relationship == "lt") return "<";
+        if (relationship == "le") return "<=";
+    }
+
+    function remove(slice: string, relationship: string, value: number) {
+        return () => {
+            features.removeFilter(slice, relationship, value);
+            filters = features.filters;
+            features.render();
+            plot.updateData(features.view);
+        };
+    }
 </script>
 
-<div class="filters-header">
-    <p>Filters</p>
-</div>
+<div id="container">
+    <div class="filters-header">
+        <p>Filters</p>
+    </div>
 
-<div class="filter-toggle">
-    <button onclick={() => (showAdder = !showAdder)}>Add Filter</button>
-</div>
+    <div class="filter-toggle">
+        <button onclick={() => (showAdder = !showAdder)}>Add Filter</button>
+    </div>
 
-{#if showAdder}
     <div class="filter-adder" transition:slide={{ duration: 200 }}>
         <div class="filter-input">
             <label for="slice">Statistic:</label>
@@ -104,13 +126,32 @@
             <p class="error-message" transition:slide>{errorMessage}</p>
         {/if}
     </div>
-{/if}
+</div>
 
-{#each features.filters as filter}
-    <Filter {filter} />
+{#each filters as filter}
+    <div class="filter">
+        <p>{filter.slice} {getSymbol(filter.relationship)} {filter.value}</p>
+
+        <button
+            onclick={remove(filter.slice, filter.relationship, filter.value)}
+        >
+            Remove
+        </button>
+    </div>
 {/each}
 
 <style>
+    #container {
+        width: 100%;
+        height: 62%;
+        border: 2px solid lightgray;
+        border-radius: 5px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+    }
     .filters-header {
         display: flex;
         flex-direction: row;

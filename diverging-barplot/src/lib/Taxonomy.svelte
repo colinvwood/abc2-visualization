@@ -18,9 +18,11 @@
     });
 </script>
 
-<div class="taxonomy">
-    <svg></svg>
-    <div class="taxonomy-controls">
+<div id="container">
+    <div id="taxonomy-svg-container">
+        <svg></svg>
+    </div>
+    <div id="sidebar">
         <SelectedTaxon {taxonomyPlot} />
         <TaxonomyFilter {taxonomyPlot} {taxonomyFilters} />
         <TaxonomyFilterList {taxonomyPlot} {taxonomyFilters} />
@@ -28,22 +30,28 @@
 </div>
 
 <style>
-    .taxonomy {
+    #container {
         display: flex;
         flex-direction: row;
         justify-content: space-around;
+        min-height: 500px;
+        height: 50vh;
+        width: 100%;
     }
-    svg {
-        height: 70vh;
-        width: 80vw;
+    #taxonomy-svg-container {
+        width: 75%;
         border: 2px solid lightgray;
         border-radius: 5px;
     }
-    .taxonomy-controls {
+    svg {
+        width: 100%;
+        height: 100%;
+    }
+    #sidebar {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         align-items: center;
-        width: 18vw;
+        width: 23%;
     }
 </style>
