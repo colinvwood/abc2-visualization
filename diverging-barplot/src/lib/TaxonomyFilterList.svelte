@@ -12,6 +12,9 @@
             taxonomyFilters.removeFilter(type, value);
             taxonomyFilters.applyFilters();
             taxonomyPlot.render(taxonomyPlot.render);
+
+            features.render();
+            plot.updateData(features.view);
         };
     }
 

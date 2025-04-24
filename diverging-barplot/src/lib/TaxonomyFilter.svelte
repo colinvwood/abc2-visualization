@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { slide } from "svelte/transition";
-    import { TaxonomyFilters } from "../util/taxonomy.svelte";
+    import features from "../util/features";
+    import plot from "../util/plot";
 
     const { taxonomyPlot, taxonomyFilters } = $props();
 
@@ -51,6 +51,9 @@
             taxonomyFilters.addFeatureCountFilter(valueAsNumber);
             taxonomyFilters.applyFilters();
             taxonomyPlot.render(taxonomyPlot.root);
+
+            features.render();
+            plot.updateData(features.view);
         } else {
             // todo
             throw new Error("Unexpected taxonomy filter type.");
