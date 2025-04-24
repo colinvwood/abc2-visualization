@@ -12,12 +12,18 @@ export type VariableRecord = {
 
 export class FeatureRecord {
     featureId: string;
-    classification: string | null;
+    classification?: string;
+    shortClassification?: string;
     variables: Map<string, VariableRecord> = new Map();
 
-    constructor(featureId: string, classification: string | null = null) {
+    constructor(featureId: string, taxonomyNode?: TaxonomyNode) {
         this.featureId = featureId;
-        this.classification = classification;
+
+        this.classification = taxonomyNode?.getFullTaxonString();
+        if (taxonomyNode) {
+            const nonAnonymousName = taxonomyNode.getNonAnonymousTaxonString();
+            this.shortClassification = `(${featureId.slice(0, 6)}) ${nonAnonymousName}`;
+        }
     }
 
     /**
@@ -114,6 +120,7 @@ export type ViewRecord = {
     p: number;
     q: number;
     classification: string;
+    shortClassification: string;
 };
 
 type Filter = {
@@ -268,6 +275,7 @@ export class FeatureRecords {
                 p: variable.p!,
                 q: variable.q!,
                 classification,
+                shortClassification: record.shortClassification,
             };
         });
 

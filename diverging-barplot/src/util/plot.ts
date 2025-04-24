@@ -434,7 +434,9 @@ export class DivergingBarplot {
 
         const drawLabels = (selection: any) => {
             selection
-                .text((d) => d.featureId)
+                .text((d) =>
+                    d.shortClassification ? d.shortClassification : d.featureId,
+                )
                 .attr("x", this.xScale(0))
                 .attr(
                     "y",

@@ -566,6 +566,31 @@ export class TaxonomyNode {
         return ancestorNames.join(";");
     }
 
+    /**
+     * Gets the shortest taxonomy string that contains a non-anonymous level
+     * label.
+     *
+     * Examples:
+     * (...);f__family;g__genus;s__ => g__genus;s__
+     * (...);o__order;f__family;g__;s__ => f__family;g__;s__
+     * (...);g__genus;s__species => s__species
+     */
+    getNonAnonymousTaxonString(): string {
+        const ancestorNames = this.getAncestors()
+            .reverse()
+            .map((a) => a.name);
+
+        let lastNonAnonymousIndex = null;
+        for (const [index, ancestorName] of ancestorNames.entries()) {
+            if (ancestorName.slice(-2) != "__") {
+                lastNonAnonymousIndex = index;
+            }
+        }
+        if (lastNonAnonymousIndex == null) lastNonAnonymousIndex = 0;
+
+        return ancestorNames.slice(lastNonAnonymousIndex).join(";");
+    }
+
     getFeatureCount(): number {
         return this.featureIDs.length;
     }

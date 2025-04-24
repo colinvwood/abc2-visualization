@@ -95,10 +95,9 @@ export function parseJSONLFeatureRecord(
     slice: string,
     rootTaxon: TaxonomyNode | null,
 ): FeatureRecord {
-    const taxonName = rootTaxon
-        ?.findTaxonById(jsonRecord.taxon)
-        ?.getFullTaxonString();
-    const featureRecord = new FeatureRecord(jsonRecord.taxon, taxonName);
+    const taxonNode = rootTaxon?.findTaxonById(jsonRecord.taxon);
+
+    const featureRecord = new FeatureRecord(jsonRecord.taxon, taxonNode);
 
     for (let column of Object.keys(jsonRecord)) {
         if (column == "taxon") continue;

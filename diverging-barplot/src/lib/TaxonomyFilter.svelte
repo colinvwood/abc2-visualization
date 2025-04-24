@@ -47,7 +47,6 @@
         }
 
         if (filterInfo.type == "feature-count") {
-            // call taxonomy filters addFeatureCountFilter
             taxonomyFilters.addFeatureCountFilter(valueAsNumber);
             taxonomyFilters.applyFilters();
             taxonomyPlot.render(taxonomyPlot.root);
