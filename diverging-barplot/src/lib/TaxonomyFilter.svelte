@@ -6,7 +6,6 @@
     const { taxonomyPlot, taxonomyFilters } = $props();
 
     let filterInfo = $state({
-        type: "",
         value: "",
         percent: "",
     });
@@ -14,10 +13,6 @@
     let errorMessage = $state("");
 
     function handleFilter() {
-        if (!filterInfo.type) {
-            errorMessage = "Please enter an input for Filter by.";
-            return;
-        }
         if (filterInfo.value == "" && filterInfo.percent == "") {
             errorMessage =
                 "Please enter an input for either Value or Percentage.";
@@ -46,20 +41,14 @@
             valueAsNumber = (valueAsNumber / 100) * numberFeatures;
         }
 
-        if (filterInfo.type == "feature-count") {
-            taxonomyFilters.addFeatureCountFilter(valueAsNumber);
-            taxonomyFilters.applyFilters();
-            taxonomyPlot.render(taxonomyPlot.root);
+        taxonomyFilters.addFeatureCountFilter(valueAsNumber);
+        taxonomyFilters.applyFilters();
+        taxonomyPlot.render(taxonomyPlot.root);
 
-            features.render();
-            plot.updateData(features.view);
-        } else {
-            // todo
-            throw new Error("Unexpected taxonomy filter type.");
-        }
+        features.render();
+        plot.updateData(features.view);
 
         filterInfo = {
-            type: "",
             value: "",
             percent: "",
         };
@@ -68,17 +57,7 @@
 </script>
 
 <div id="container">
-    <h1>Add a Filter</h1>
-    <div>
-        <label for="filter-type">Filter by:</label>
-        <select
-            name="filter-type"
-            id="filter-type"
-            bind:value={filterInfo.type}
-        >
-            <option value="feature-count">Feature count</option>
-        </select>
-    </div>
+    <h1>Filter Taxonomy by Feature Count</h1>
     <div>
         <label for="filter-value">Value:</label>
         <input

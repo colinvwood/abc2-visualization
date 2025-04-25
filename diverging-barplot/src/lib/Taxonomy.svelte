@@ -23,7 +23,7 @@
         <svg></svg>
     </div>
     <div id="sidebar">
-        <SelectedTaxon {taxonomyPlot} />
+        <SelectedTaxon {taxonomyPlot} {taxonomyFilters} />
         <TaxonomyFilter {taxonomyPlot} {taxonomyFilters} />
         <TaxonomyFilterList {taxonomyPlot} {taxonomyFilters} />
     </div>

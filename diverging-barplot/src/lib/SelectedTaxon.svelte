@@ -1,7 +1,18 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
+    import features from "../util/features";
+    import plot from "../util/plot";
 
-    const { taxonomyPlot } = $props();
+    const { taxonomyPlot, taxonomyFilters } = $props();
+
+    let filtered = $state(false);
+    $effect(() => {
+        taxonomyFilters?.filters;
+
+        if (taxonomyPlot != null && taxonomyPlot.selectedTaxon != null) {
+            filtered = taxonomyPlot.selectedTaxon.filtered;
+        }
+    });
 
     const name = $derived(
         taxonomyPlot.selectedTaxon ? taxonomyPlot.selectedTaxon.name : "",
@@ -61,6 +72,14 @@
         taxonomyPlot.root.data.clearSearchMatches();
         taxonomyPlot.render(taxonomyPlot.root);
     }
+
+    function handleFilter() {
+        taxonomyPlot.selectedTaxon.filtered = filtered;
+        taxonomyPlot.render(taxonomyPlot.root);
+
+        features.render();
+        plot.updateData(features.view);
+    }
 </script>
 
 <div id="container">
@@ -92,6 +111,16 @@
         <p>
             Features classified to subtree: {subtreeCount} ({subtreePercent}%)
         </p>
+        <div class="toggle">
+            <label for="taxon-filter">Filter taxon:</label>
+            <input
+                type="checkbox"
+                id="taxon-filter"
+                name="taxon-filter"
+                bind:checked={filtered}
+                onchange={handleFilter}
+            />
+        </div>
     {/if}
 </div>
 

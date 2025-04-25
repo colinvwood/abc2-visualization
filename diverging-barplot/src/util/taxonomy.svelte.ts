@@ -635,7 +635,7 @@ export class TaxonomyFilters {
         filter.type = "feature-count";
         filter.value = featureCount;
 
-        this.filters.push(filter);
+        this.filters = [...this.filters, filter];
     }
 
     removeFilter(type: string, value: number) {

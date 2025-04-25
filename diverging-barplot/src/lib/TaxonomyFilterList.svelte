@@ -4,8 +4,8 @@
 
     const { taxonomyPlot, taxonomyFilters } = $props();
 
-    let plotSync = $state(false);
-    let hideFiltered = $state(false);
+    let hideFilteredTree = $state(false);
+    let hideFilteredPlot = $state(false);
     let keepOnly = $state(false);
 
     function removeFilter(type: string, value: string) {
@@ -19,13 +19,21 @@
         };
     }
 
-    function handleHideFiltered() {
-        taxonomyPlot.hideFiltered = hideFiltered;
+    function handleHideFilteredTree() {
+        taxonomyPlot.hideFiltered = hideFilteredTree;
         taxonomyPlot.render(taxonomyPlot.root);
     }
 
-    function handlePlotSync() {
-        if (plotSync) {
+    function handlehideFilteredPlot() {
+        if (hideFilteredPlot && keepOnly) {
+            hideFilteredPlot = false;
+            alert(
+                `Select only one of hiding filtered taxa and showing only
+                kept taxa.`,
+            );
+        }
+
+        if (hideFilteredPlot) {
             features.hideFiltered = true;
             features.render();
 
@@ -39,6 +47,14 @@
     }
 
     function handleKeepOnly() {
+        if (hideFilteredPlot && keepOnly) {
+            keepOnly = false;
+            alert(
+                `Select only one of hiding filtered taxa and showing only
+                kept taxa.`,
+            );
+        }
+
         if (keepOnly) {
             features.rootTaxon = taxonomyPlot.root.data;
             features.showOnlyKept = true;
@@ -56,7 +72,7 @@
 </script>
 
 <div id="container">
-    <h1>Filters</h1>
+    <h1>Taxonomy Filters</h1>
     <div id="filters">
         {#each taxonomyFilters?.filters as filter}
             <div class="filter">
@@ -73,8 +89,8 @@
             type="checkbox"
             id="hide-filters"
             name="hide-filters"
-            bind:checked={hideFiltered}
-            onchange={handleHideFiltered}
+            bind:checked={hideFilteredTree}
+            onchange={handleHideFilteredTree}
         />
     </div>
     <div class="toggle">
@@ -83,8 +99,8 @@
             type="checkbox"
             id="plot-sync"
             name="plot-sync"
-            bind:checked={plotSync}
-            onchange={handlePlotSync}
+            bind:checked={hideFilteredPlot}
+            onchange={handlehideFilteredPlot}
         />
     </div>
     <div class="toggle">
