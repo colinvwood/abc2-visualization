@@ -1,6 +1,7 @@
 <script lang="ts">
     import features from "../util/features";
     import plot from "../util/plot";
+    import { TaxonomyNode } from "../util/taxonomy.svelte";
 
     const { taxonomyPlot, taxonomyFilters } = $props();
 
@@ -8,9 +9,13 @@
     let hideFilteredPlot = $state(false);
     let keepOnly = $state(false);
 
-    function removeFilter(type: string, value: string) {
+    function removeFilter(type: string, value?: string, node?: TaxonomyNode) {
         return () => {
-            taxonomyFilters.removeFilter(type, value);
+            if (type == "feature-count") {
+                taxonomyFilters.removeFeatureCountFilter(value);
+            } else if (type == "individual") {
+                taxonomyFilters.removeIndividualFilter(node);
+            }
             taxonomyFilters.applyFilters();
             taxonomyPlot.render(taxonomyPlot.render);
 
@@ -50,8 +55,8 @@
         if (hideFilteredPlot && keepOnly) {
             keepOnly = false;
             alert(
-                `Select only one of hiding filtered taxa and showing only
-                kept taxa.`,
+                "Select only one of hiding filtered taxa and showing only \
+                kept taxa.",
             );
         }
 
@@ -76,10 +81,26 @@
     <div id="filters">
         {#each taxonomyFilters?.filters as filter}
             <div class="filter">
-                <p>{filter.type} {"<"} {filter.value}</p>
-                <button onclick={removeFilter(filter.type, filter.value)}>
-                    Remove
-                </button>
+                {#if filter.type == "feature-count"}
+                    <p>features {"<"} {filter.value}</p>
+                    <button onclick={removeFilter(filter.type, filter.value)}>
+                        Remove
+                    </button>
+                {:else if filter.type == "individual"}
+                    <p>
+                        individual filter of
+                        {filter.node.getNonAnonymousTaxonString()}
+                    </p>
+                    <button
+                        onclick={removeFilter(
+                            filter.type,
+                            undefined,
+                            filter.node,
+                        )}
+                    >
+                        Remove
+                    </button>
+                {/if}
             </div>
         {/each}
     </div>

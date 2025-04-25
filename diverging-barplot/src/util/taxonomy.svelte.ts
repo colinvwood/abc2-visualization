@@ -576,6 +576,8 @@ export class TaxonomyNode {
      * (...);g__genus;s__species => s__species
      */
     getNonAnonymousTaxonString(): string {
+        if (this.parent == null) return "root";
+
         const ancestorNames = this.getAncestors()
             .reverse()
             .map((a) => a.name);
@@ -638,9 +640,30 @@ export class TaxonomyFilters {
         this.filters = [...this.filters, filter];
     }
 
-    removeFilter(type: string, value: number) {
+    removeFeatureCountFilter(value: number) {
         this.filters = this.filters.filter((f) => {
-            return !(f.type == type && f.value == value);
+            if (f.type != "feature-count") return true;
+
+            return !(f.value == value);
+        });
+    }
+
+    addIndividualFilter(filterNode: TaxonomyNode) {
+        const filter = (node: TaxonomyNode) => {
+            return node == filterNode;
+        };
+
+        filter.type = "individual";
+        filter.node = filterNode;
+
+        this.filters = [...this.filters, filter];
+    }
+
+    removeIndividualFilter(filterNode: TaxonomyNode) {
+        this.filters = this.filters.filter((f) => {
+            if (f.type != "individual") return true;
+
+            return !(f.node == filterNode);
         });
     }
 
@@ -649,11 +672,12 @@ export class TaxonomyFilters {
 
         nodes.forEach((node) => (node.filtered = false));
 
-        for (let filter of this.filters) {
-            nodes.forEach((node) => {
+        nodes.forEach((node) => {
+            for (let filter of this.filters) {
                 node.filtered = filter(node);
-            });
-        }
+                if (node.filtered) return;
+            }
+        });
     }
 }
 

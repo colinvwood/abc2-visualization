@@ -11,8 +11,6 @@
 
     let filters = $state([]);
 
-    let showAdder = $state(false);
-
     let errorMessage = $state("");
 
     function addFilter() {
@@ -81,10 +79,6 @@
 <div id="container">
     <div class="filters-header">
         <p>Filters</p>
-    </div>
-
-    <div class="filter-toggle">
-        <button onclick={() => (showAdder = !showAdder)}>Add Filter</button>
     </div>
 
     <div class="filter-adder" transition:slide={{ duration: 200 }}>

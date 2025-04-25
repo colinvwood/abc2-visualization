@@ -74,7 +74,13 @@
     }
 
     function handleFilter() {
-        taxonomyPlot.selectedTaxon.filtered = filtered;
+        if (filtered) {
+            taxonomyFilters.addIndividualFilter(taxonomyPlot.selectedTaxon);
+        } else {
+            taxonomyFilters.removeIndividualFilter(taxonomyPlot.selectedTaxon);
+        }
+
+        taxonomyFilters.applyFilters();
         taxonomyPlot.render(taxonomyPlot.root);
 
         features.render();
