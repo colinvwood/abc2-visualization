@@ -6,6 +6,7 @@
 
     let plotSync = $state(false);
     let hideFiltered = $state(false);
+    let keepOnly = $state(false);
 
     function removeFilter(type: string, value: string) {
         return () => {
@@ -18,22 +19,39 @@
         };
     }
 
+    function handleHideFiltered() {
+        taxonomyPlot.hideFiltered = hideFiltered;
+        taxonomyPlot.render(taxonomyPlot.root);
+    }
+
     function handlePlotSync() {
         if (plotSync) {
-            features.rootTaxon = taxonomyPlot.root.data;
+            features.hideFiltered = true;
             features.render();
+
             plot.updateData(features.view);
         } else {
-            console.log("unsyncing");
-            features.rootTaxon = null;
+            features.hideFiltered = false;
+
             features.render();
             plot.updateData(features.view);
         }
     }
 
-    function handleHideFiltered() {
-        taxonomyPlot.hideFiltered = hideFiltered;
-        taxonomyPlot.render(taxonomyPlot.root);
+    function handleKeepOnly() {
+        if (keepOnly) {
+            features.rootTaxon = taxonomyPlot.root.data;
+            features.showOnlyKept = true;
+            features.render();
+
+            plot.updateData(features.view);
+        } else {
+            features.rootTaxon = null;
+            features.showOnlyKept = false;
+
+            features.render();
+            plot.updateData(features.view);
+        }
     }
 </script>
 
@@ -50,7 +68,17 @@
         {/each}
     </div>
     <div class="toggle">
-        <label for="plot-sync">Sync with bar plot</label>
+        <label for="plot-sync">Hide filtered taxa from tree</label>
+        <input
+            type="checkbox"
+            id="hide-filters"
+            name="hide-filters"
+            bind:checked={hideFiltered}
+            onchange={handleHideFiltered}
+        />
+    </div>
+    <div class="toggle">
+        <label for="plot-sync">Hide filtered taxa from barplot</label>
         <input
             type="checkbox"
             id="plot-sync"
@@ -60,13 +88,13 @@
         />
     </div>
     <div class="toggle">
-        <label for="plot-sync">Hide filtered taxa from tree</label>
+        <label for="keep-only">Show only kept taxa in barplot</label>
         <input
             type="checkbox"
-            id="hide-filters"
-            name="hide-filters"
-            bind:checked={hideFiltered}
-            onchange={handleHideFiltered}
+            id="keep-only"
+            name="keep-only"
+            bind:checked={keepOnly}
+            onchange={handleKeepOnly}
         />
     </div>
 </div>

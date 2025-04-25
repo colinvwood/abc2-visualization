@@ -132,7 +132,10 @@ type Filter = {
 
 export class FeatureRecords {
     records: FeatureRecord[] = [];
+
     rootTaxon: TaxonomyNode | null = null;
+    hideFiltered: boolean = false;
+    showOnlyKept: boolean = false;
 
     view: ViewRecord[] = [];
     viewVariable: string = "";
@@ -231,7 +234,7 @@ export class FeatureRecords {
         let filtered: FeatureRecord[] = [];
 
         // apply taxonomyFilters if present
-        if (this.rootTaxon != null) {
+        if (this.hideFiltered || this.showOnlyKept) {
             for (let record of this.records) {
                 const node = this.rootTaxon.findTaxonById(record.featureId);
                 if (node == null) {
@@ -239,7 +242,10 @@ export class FeatureRecords {
                         `Could not find taxon with id ${record.featureId}`,
                     );
                 }
-                if (!node.filtered) {
+
+                if (this.hideFiltered && !node.filtered) {
+                    filtered.push(record);
+                } else if (this.showOnlyKept && node.hierarchyNode.keep) {
                     filtered.push(record);
                 }
             }
