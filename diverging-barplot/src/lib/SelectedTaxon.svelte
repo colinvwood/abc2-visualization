@@ -1,6 +1,6 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
-    import features from "../util/features";
+    import features from "../util/features.svelte";
     import plot from "../util/plot";
 
     const { taxonomyPlot, taxonomyFilters } = $props();
@@ -118,7 +118,7 @@
             Features classified to subtree: {subtreeCount} ({subtreePercent}%)
         </p>
         <div class="toggle">
-            <label for="taxon-filter">Filter taxon:</label>
+            <label for="taxon-filter">Filter:</label>
             <input
                 type="checkbox"
                 id="taxon-filter"
@@ -168,5 +168,11 @@
         border-radius: 5px;
         padding: 3px;
         max-width: 90%;
+    }
+    .toggle {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
     }
 </style>

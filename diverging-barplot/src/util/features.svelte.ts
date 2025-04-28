@@ -138,10 +138,18 @@ export class FeatureRecords {
     showOnlyKept: boolean = false;
 
     view: ViewRecord[] = [];
-    viewVariable: string = "";
-    viewVariableLevel: string | null = null;
+    viewVariable: string = $state("");
+    viewVariableLevel: string = $state("");
 
     filters: Filter[] = [];
+
+    /**
+     * Returns an arbitrary variable record, useful for initializing the
+     * barplot.
+     */
+    getInitialVariable(): VariableRecord {
+        return this.getAllVariables()[0];
+    }
 
     /*
      * Return the feature with id `featureId`, or undefined if not found.

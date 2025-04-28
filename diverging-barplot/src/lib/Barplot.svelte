@@ -2,11 +2,15 @@
     import { onMount } from "svelte";
     import BarplotControls from "./BarplotControls.svelte";
     import BarplotFilters from "./BarplotFilters.svelte";
-    import features from "../util/features";
+    import features from "../util/features.svelte";
     import plot from "../util/plot";
 
     // render features
-    features.viewVariable = "year";
+    const initialVariable = features.getInitialVariable();
+    features.viewVariable = initialVariable.name;
+    if (initialVariable.level) {
+        features.viewVariableLevel = initialVariable.level;
+    }
     features.render();
 
     // draw plot once svg exists

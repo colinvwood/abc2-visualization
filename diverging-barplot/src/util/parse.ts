@@ -4,7 +4,7 @@ import {
     FeatureRecords,
     FeatureRecord,
     type VariableRecord,
-} from "../util/features";
+} from "./features.svelte";
 
 import { TaxonomyNode } from "./taxonomy.svelte";
 

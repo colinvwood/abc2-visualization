@@ -1,6 +1,6 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
-    import features from "../util/features";
+    import features from "../util/features.svelte";
     import plot from "../util/plot";
 
     let filterInfo = $state({

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
-    import features from "../util/features";
+    import features from "../util/features.svelte";
     import plot from "../util/plot";
 
     const { taxonomyPlot, taxonomyFilters } = $props();
@@ -9,6 +9,10 @@
         value: "",
         percent: "",
     });
+
+    let hideFilteredTree = $state(false);
+    let hideFilteredPlot = $state(false);
+    let keepOnly = $state(false);
 
     let errorMessage = $state("");
 
@@ -54,6 +58,57 @@
         };
         errorMessage = "";
     }
+
+    function handleHideFilteredTree() {
+        taxonomyPlot.hideFiltered = hideFilteredTree;
+        taxonomyPlot.render(taxonomyPlot.root);
+    }
+
+    function handlehideFilteredPlot() {
+        if (hideFilteredPlot && keepOnly) {
+            hideFilteredPlot = false;
+            alert(
+                `Select only one of hiding filtered taxa and showing only
+                kept taxa.`,
+            );
+        }
+
+        if (hideFilteredPlot) {
+            features.hideFiltered = true;
+            features.render();
+
+            plot.updateData(features.view);
+        } else {
+            features.hideFiltered = false;
+
+            features.render();
+            plot.updateData(features.view);
+        }
+    }
+
+    function handleKeepOnly() {
+        if (hideFilteredPlot && keepOnly) {
+            keepOnly = false;
+            alert(
+                "Select only one of hiding filtered taxa and showing only \
+                kept taxa.",
+            );
+        }
+
+        if (keepOnly) {
+            features.rootTaxon = taxonomyPlot.root.data;
+            features.showOnlyKept = true;
+            features.render();
+
+            plot.updateData(features.view);
+        } else {
+            features.rootTaxon = null;
+            features.showOnlyKept = false;
+
+            features.render();
+            plot.updateData(features.view);
+        }
+    }
 </script>
 
 <div id="container">
@@ -83,12 +138,42 @@
             <p>{errorMessage}</p>
         </div>
     {/if}
+    <div class="toggle">
+        <label for="plot-sync">Hide filtered taxa from tree</label>
+        <input
+            type="checkbox"
+            id="hide-filters"
+            name="hide-filters"
+            bind:checked={hideFilteredTree}
+            onchange={handleHideFilteredTree}
+        />
+    </div>
+    <div class="toggle">
+        <label for="plot-sync">Hide filtered taxa from barplot</label>
+        <input
+            type="checkbox"
+            id="plot-sync"
+            name="plot-sync"
+            bind:checked={hideFilteredPlot}
+            onchange={handlehideFilteredPlot}
+        />
+    </div>
+    <div class="toggle">
+        <label for="keep-only">Show only kept taxa in barplot</label>
+        <input
+            type="checkbox"
+            id="keep-only"
+            name="keep-only"
+            bind:checked={keepOnly}
+            onchange={handleKeepOnly}
+        />
+    </div>
 </div>
 
 <style>
     #container {
         width: 100%;
-        height: 32%;
+        height: 40%;
         border: 2px solid lightgray;
         border-radius: 5px;
 
@@ -115,5 +200,15 @@
     p {
         padding: 0;
         margin: 0;
+    }
+    .toggle {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+    }
+    input {
+        border: 2px solid lightgray;
+        border-radius: 5px;
     }
 </style>

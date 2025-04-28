@@ -1,5 +1,5 @@
 <script lang="ts">
-    import features from "../util/features";
+    import features from "../util/features.svelte";
     import plot from "../util/plot";
 
     const variables = features.getAllVariables();
@@ -7,36 +7,27 @@
         new Set(variables.map((v) => v.name)),
     );
 
-    let variableName = $state("");
-    let variableLevel = $state("");
-    let showLevel = $state(false);
-    let levelNames = $state<string[]>([]);
+    let levelNames = $derived<(string | undefined)[]>(
+        features
+            .getVariablesWithName(features.viewVariable)
+            .map((v) => v.level),
+    );
+    let showLevel = $derived(levelNames.length > 1);
 
     function handleNameChange() {
-        const variables = features.getVariablesWithName(variableName);
+        const variables = features.getVariablesWithName(features.viewVariable);
 
         if (variables.length == 1) {
             // variable not categorical
-            showLevel = false;
-            variableLevel = "";
-
-            features.viewVariable = variableName;
-            features.viewVariableLevel = null;
+            features.viewVariableLevel = "";
 
             features.render();
             plot.updateData(features.view);
-        } else {
-            // categorical variable
-            showLevel = true;
-            levelNames = variables.map((v) => v.level) as string[];
         }
     }
 
     function handleLevelChange() {
         // update features and render
-        features.viewVariable = variableName;
-        features.viewVariableLevel = variableLevel;
-
         features.render();
         plot.updateData(features.view);
     }
@@ -50,7 +41,7 @@
             <select
                 name="variable"
                 id="variable"
-                bind:value={variableName}
+                bind:value={features.viewVariable}
                 onchange={handleNameChange}
             >
                 {#each uniqueVariableNames as name}
@@ -63,7 +54,7 @@
             <select
                 name="level"
                 id="level"
-                bind:value={variableLevel}
+                bind:value={features.viewVariableLevel}
                 onchange={handleLevelChange}
                 disabled={!showLevel}
             >

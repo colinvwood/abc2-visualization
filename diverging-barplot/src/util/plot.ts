@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { type ViewRecord } from "../util/features";
+import { type ViewRecord } from "./features.svelte";
 
 type PlotDimensions = {
     svgWidth: number;
