@@ -6,6 +6,10 @@
 
     const { taxonomyPlot, taxonomyFilters } = $props();
 
+    let hideFilteredTree = $state(false);
+    let hideFilteredPlot = $state(false);
+    let keepOnly = $state(false);
+
     function removeFilter(type: string, value?: string, node?: TaxonomyNode) {
         return () => {
             if (type == "feature-count") {
@@ -19,6 +23,55 @@
             features.render();
             plot.updateData(features.view);
         };
+    }
+
+    function handleHideFilteredTree() {
+        taxonomyPlot.hideFiltered = hideFilteredTree;
+        taxonomyPlot.render(taxonomyPlot.root);
+    }
+
+    function handlehideFilteredPlot() {
+        if (hideFilteredPlot && keepOnly) {
+            hideFilteredPlot = false;
+            alert(
+                `Select only one of hiding filtered taxa and showing only
+                kept taxa.`,
+            );
+        }
+
+        if (hideFilteredPlot) {
+            features.hideFiltered = true;
+            features.render();
+
+            plot.updateData(features.view);
+        } else {
+            features.hideFiltered = false;
+
+            features.render();
+            plot.updateData(features.view);
+        }
+    }
+
+    function handleKeepOnly() {
+        if (hideFilteredPlot && keepOnly) {
+            keepOnly = false;
+            alert(
+                "Select only one of hiding filtered taxa and showing only \
+                kept taxa.",
+            );
+        }
+
+        if (keepOnly) {
+            features.showOnlyKept = true;
+            features.render();
+
+            plot.updateData(features.view);
+        } else {
+            features.showOnlyKept = false;
+
+            features.render();
+            plot.updateData(features.view);
+        }
     }
 </script>
 

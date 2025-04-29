@@ -11,10 +11,6 @@
         percent: "",
     });
 
-    let hideFilteredTree = $state(false);
-    let hideFilteredPlot = $state(false);
-    let keepOnly = $state(false);
-
     let errorMessage = $state("");
 
     function handleFilter() {
@@ -58,57 +54,6 @@
             percent: "",
         };
         errorMessage = "";
-    }
-
-    function handleHideFilteredTree() {
-        taxonomyPlot.hideFiltered = hideFilteredTree;
-        taxonomyPlot.render(taxonomyPlot.root);
-    }
-
-    function handlehideFilteredPlot() {
-        if (hideFilteredPlot && keepOnly) {
-            hideFilteredPlot = false;
-            alert(
-                `Select only one of hiding filtered taxa and showing only
-                kept taxa.`,
-            );
-        }
-
-        if (hideFilteredPlot) {
-            features.hideFiltered = true;
-            features.render();
-
-            plot.updateData(features.view);
-        } else {
-            features.hideFiltered = false;
-
-            features.render();
-            plot.updateData(features.view);
-        }
-    }
-
-    function handleKeepOnly() {
-        if (hideFilteredPlot && keepOnly) {
-            keepOnly = false;
-            alert(
-                "Select only one of hiding filtered taxa and showing only \
-                kept taxa.",
-            );
-        }
-
-        if (keepOnly) {
-            features.rootTaxon = taxonomyPlot.root.data;
-            features.showOnlyKept = true;
-            features.render();
-
-            plot.updateData(features.view);
-        } else {
-            features.rootTaxon = null;
-            features.showOnlyKept = false;
-
-            features.render();
-            plot.updateData(features.view);
-        }
     }
 </script>
 
