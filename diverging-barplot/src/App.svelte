@@ -6,7 +6,7 @@
     import { parseTaxonomy } from "./util/taxonomy.svelte";
 
     const taxonomyPath = "taxonomy.tsv";
-    const slicesPath = "testing";
+    const slicesPath = "slices";
 
     const fetchPromise = fetch(taxonomyPath);
 
