@@ -2,6 +2,7 @@
     import { slide } from "svelte/transition";
     import features from "../util/features.svelte";
     import plot from "../util/plot";
+    import ControlContainer from "./ControlContainer.svelte";
 
     let filterInfo = $state({
         slice: "",
@@ -76,26 +77,27 @@
     }
 </script>
 
-<div id="container">
-    <div class="filters-header">
-        <p>Filters</p>
-    </div>
+<ControlContainer title='Filters:'>
 
-    <div class="filter-adder" transition:slide={{ duration: 200 }}>
-        <div class="filter-input">
-            <label for="slice">Statistic:</label>
-            <select name="slice" id="slice" bind:value={filterInfo.slice}>
+    <div class="grid grid-cols-[auto_1fr] gap-2 place-items-baseline" transition:slide={{ duration: 200 }}>
+        <div class="grid grid-cols-subgrid col-span-2">
+            <label for="slice" class='col-end-1'>Statistic:</label>
+            <select name="slice" id="slice"
+                class='bg-white border-gray-300 border rounded px-2 py-1 grow col-start-2 w-full'
+                bind:value={filterInfo.slice}
+            >
                 <option value="lfc">lfc (log fold change)</option>
                 <option value="se">se (standard error)</option>
                 <option value="p">p-value</option>
                 <option value="q">adjusted p-value (q)</option>
             </select>
         </div>
-        <div class="filter-input">
+        <div class="grid grid-cols-subgrid col-span-2">
             <label for="relationship">Relationship:</label>
             <select
                 name="relationship"
                 id="relationship"
+                class='bg-white border-gray-300 border rounded px-2 py-1 grow col-start-2 w-full'
                 bind:value={filterInfo.relationship}
             >
                 <option value="gt">greater than</option>
@@ -104,12 +106,13 @@
                 <option value="le">less than/equal</option>
             </select>
         </div>
-        <div class="filter-input">
+        <div class="grid grid-cols-subgrid col-span-2">
             <label for="value">Value:</label>
             <input
                 type="text"
                 id="value"
                 name="value"
+                class='bg-white border-gray-300 border rounded px-2 py-1 grow col-start-2 w-full'
                 bind:value={filterInfo.value}
             />
         </div>
@@ -120,8 +123,10 @@
             <p class="error-message" transition:slide>{errorMessage}</p>
         {/if}
     </div>
-</div>
+</ControlContainer>
 
+{#if filters.length}
+<div class='bg-gray-100 px-1 py-0.5 rounded'>
 {#each filters as filter}
     <div class="filter">
         <p>{filter.slice} {getSymbol(filter.relationship)} {filter.value}</p>
@@ -133,59 +138,10 @@
         </button>
     </div>
 {/each}
+</div>
+{/if}
 
 <style>
-    #container {
-        width: 100%;
-        height: 62%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: center;
-    }
-    .filters-header {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-    }
-    .filters-header p {
-        font-size: 20px;
-        font-weight: bold;
-    }
-
-    .filter-toggle {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        margin-bottom: 15px;
-    }
-
-    .filter-adder {
-        padding: 15px;
-        background-color: lightblue;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: space-between;
-        border-radius: 5px;
-    }
-    .filter-input {
-        margin-bottom: 5px;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-    }
-    .filter-input select {
-        min-width: 50px;
-        max-width: 125px;
-    }
-    .filter-input input {
-        min-width: 50px;
-        max-width: 118px;
-    }
     .error-message {
         color: red;
     }

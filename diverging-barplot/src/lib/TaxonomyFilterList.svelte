@@ -2,6 +2,7 @@
     import features from "../util/features.svelte";
     import plot from "../util/plot";
     import { TaxonomyNode } from "../util/taxonomy.svelte";
+    import ControlContainer from "./ControlContainer.svelte";
 
     const { taxonomyPlot, taxonomyFilters } = $props();
 
@@ -21,8 +22,7 @@
     }
 </script>
 
-<div id="container">
-    <h1>Taxonomy Filters</h1>
+<ControlContainer title="Taxonomy Filters">
     <div id="filters">
         {#each taxonomyFilters?.filters as filter}
             <div class="filter">
@@ -49,25 +49,39 @@
             </div>
         {/each}
     </div>
-</div>
+    <div class="flex gap-1 text-sm">
+        <input
+            type="checkbox"
+            id="hide-filters"
+            name="hide-filters"
+            bind:checked={hideFilteredTree}
+            onchange={handleHideFilteredTree}
+        />
+        <label for="hide-filters">Hide filtered taxa from tree</label>
+    </div>
+    <div class="flex gap-1 text-sm">
+        <input
+            type="checkbox"
+            id="plot-sync"
+            name="plot-sync"
+            bind:checked={hideFilteredPlot}
+            onchange={handlehideFilteredPlot}
+        />
+        <label for="plot-sync">Hide filtered taxa from plot</label>
+    </div>
+    <div class="flex gap-1 text-sm">
+        <input
+            type="checkbox"
+            id="keep-only"
+            name="keep-only"
+            bind:checked={keepOnly}
+            onchange={handleKeepOnly}
+        />
+        <label for="keep-only">Show only kept taxa in plot</label>
+    </div>
+</ControlContainer>
 
 <style>
-    #container {
-        width: 100%;
-        height: 22%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: center;
-    }
-    h1 {
-        margin: 0;
-        padding: 6px 0px;
-        font-size: 16px;
-    }
     .filter {
         background-color: #fca9a9;
         border-radius: 5px;

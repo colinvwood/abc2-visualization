@@ -20,40 +20,19 @@
     });
 </script>
 
-<div id="container">
-    <div id="barplot-svg-container">
+<div class='grid grid-rows-subgrid row-span-2'>
+    <div id="barplot-svg-container" class='grid grid-rows-subgrid bg-white rounded overflow-scroll'>
         <svg></svg>
     </div>
-    <div id="sidebar">
+    <div id="sidebar" class='flex w-full min-w-0 gap-1'>
         <BarplotControls />
         <BarplotFilters />
     </div>
 </div>
 
 <style>
-    #container {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-around;
-        min-height: 500px;
-        height: 50vh;
-        width: 100%;
-    }
-    #barplot-svg-container {
-        overflow: scroll;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-        height: 100%;
-        width: 75%;
-    }
     svg {
         width: 100%;
-    }
-    #sidebar {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        width: 23%;
+        overflow: visible;
     }
 </style>

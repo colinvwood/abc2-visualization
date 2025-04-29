@@ -1,6 +1,7 @@
 <script lang="ts">
     import features from "../util/features.svelte";
     import plot from "../util/plot";
+    import ControlContainer from "./ControlContainer.svelte";
 
     const variables = features.getAllVariables();
     const uniqueVariableNames = Array.from(
@@ -33,15 +34,17 @@
     }
 </script>
 
-<div id="container">
-    <div id="variable-selector">
-        <h1>Model Variable and Level:</h1>
-        <div class="variable-input">
-            <label for="variable">Name:</label>
+<ControlContainer title="Model Variable and Level:">
+    <div
+        class="grid gap-x-2 grid-rows-3 grid-cols-[auto_1fr] place-items-baseline"
+    >
+        <div class="grid grid-cols-subgrid col-span-2">
+            <label for="variable" class="col-end-1">Name:</label>
             <select
                 name="variable"
                 id="variable"
                 bind:value={features.viewVariable}
+                class="bg-white border-gray-300 border rounded px-2 py-1 grow col-start-2 w-full"
                 onchange={handleNameChange}
             >
                 {#each uniqueVariableNames as name}
@@ -49,12 +52,13 @@
                 {/each}
             </select>
         </div>
-        <div class="variable-input">
-            <label for="level">Level:</label>
+        <div class="grid grid-cols-subgrid col-span-2">
+            <label for="level" class="col-end-1">Level:</label>
             <select
                 name="level"
                 id="level"
                 bind:value={features.viewVariableLevel}
+                class="bg-white border-gray-300 border rounded px-2 py-1 grow col-start-2 w-full"
                 onchange={handleLevelChange}
                 disabled={!showLevel}
             >
@@ -63,63 +67,16 @@
                 {/each}
             </select>
         </div>
+        <div class="flex gap-4 col-span-2">
+            <p class="col-end-1">Bar Thickness:</p>
+            <button
+                class="aspect-square"
+                onclick={() => plot.decreaseBarThickness()}>-</button
+            >
+            <button
+                class="aspect-square"
+                onclick={() => plot.increaseBarThickness()}>+</button
+            >
+        </div>
     </div>
-    <div id="bar-adjustors">
-        <p>Bar Thickness</p>
-        <button onclick={() => plot.decreaseBarThickness()}>-</button>
-        <button onclick={() => plot.increaseBarThickness()}>+</button>
-    </div>
-</div>
-
-<style>
-    #container {
-        width: 100%;
-        height: 35%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: center;
-    }
-    #bar-adjustors {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-    }
-    #bar-adjustors p {
-        margin: 0;
-        padding: 0;
-        margin-right: 10px;
-    }
-    #bar-adjustors button {
-        margin-left: 5px;
-        width: 25px;
-        height: 25px;
-    }
-    #variable-selector {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: center;
-    }
-    #variable-selector h1 {
-        margin: 0;
-        margin-bottom: 15px;
-        padding: 0;
-        font-size: 16px;
-    }
-
-    .variable-input {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        margin-bottom: 5px;
-        width: 75%;
-    }
-    .variable-input select {
-        width: 40%;
-    }
-</style>
+</ControlContainer>
