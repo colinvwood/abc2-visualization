@@ -48,7 +48,7 @@ export class DivergingBarplot {
 
         const plotHeight = numFeatures * barHeight * barPadding;
 
-        const margin = 75;
+        const margin = 120;
         const plotWidth = svgWidth - 2 * margin;
 
         return {

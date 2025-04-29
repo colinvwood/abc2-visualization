@@ -14,18 +14,20 @@
     });
 </script>
 
-{#await featuresPromise}
-    <p>Parsing slices...</p>
-{:then features}
-    <Barplot />
-{:catch error}
-    <p>An error occurred: {error.message}</p>
-{/await}
+<div class="grid lg:grid-cols-[.45fr_.55fr] lg:grid-rows-[1fr_auto] lg:h-dvh gap-1 p-1 bg-gray-300">
+    {#await featuresPromise}
+        <p>Parsing slices...</p>
+    {:then features}
+        <Barplot />
+    {:catch error}
+        <p>An error occurred: {error.message}</p>
+    {/await}
 
-{#await taxonomyPromise}
-    <p>Parsing taxonomy...</p>
-{:then rootTaxon}
-    <Taxonomy {rootTaxon} />
-{:catch error}
-    <p>An error occurred: {error.message}</p>
-{/await}
+    {#await taxonomyPromise}
+        <p>Parsing taxonomy...</p>
+    {:then rootTaxon}
+        <Taxonomy {rootTaxon} />
+    {:catch error}
+        <p>An error occurred: {error.message}</p>
+    {/await}
+</div>

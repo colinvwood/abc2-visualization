@@ -2,6 +2,7 @@
     import { slide } from "svelte/transition";
     import features from "../util/features";
     import plot from "../util/plot";
+    import ControlContainer from "./ControlContainer.svelte";
 
     const { taxonomyPlot, taxonomyFilters } = $props();
 
@@ -88,37 +89,24 @@
     }
 </script>
 
-<div id="container">
-    <h1>Taxon Info</h1>
-    <div id="search-bar">
+<ControlContainer title='Taxon Info:'>
+    <div class='flex justify-between mb-2 gap-2'>
         <input
             type="text"
             name="taxon"
+            class='bg-white border-gray-300 border rounded px-2 py-1 w-full'
             placeholder="Search..."
             bind:value={searchString}
             onkeydown={handleSearch}
         />
-        <button onclick={clearSearch}>Clear</button>
+        <button onclick={clearSearch} class='bg-purple-400 px-4 py-0.5 rounded text-white'>Clear</button>
     </div>
     {#if searchError != ""}
         <div id="search-error" transition:slide>
             <p>{searchError}</p>
         </div>
     {/if}
-    {#if taxonomyPlot?.selectedTaxon == undefined}
-        {#if searchError == ""}
-            <p>Click on a taxon name for more information.</p>
-        {/if}
-    {:else}
-        <p>Name: {name}</p>
-        <p>
-            Features classified to taxon: {featureCount} ({featurePercent}%)
-        </p>
-        <p>
-            Features classified to subtree: {subtreeCount} ({subtreePercent}%)
-        </p>
         <div class="toggle">
-            <label for="taxon-filter">Filter taxon:</label>
             <input
                 type="checkbox"
                 id="taxon-filter"
@@ -126,43 +114,25 @@
                 bind:checked={filtered}
                 onchange={handleFilter}
             />
+            <label for="taxon-filter">Filter taxon</label>
         </div>
+        <hr class='my-2 border-gray-400'/>
+    {#if taxonomyPlot?.selectedTaxon == undefined}
+        {#if searchError == ""}
+            <p>Click on a taxon name for more information.</p>
+        {/if}
+    {:else}
+        <p><b>Name:</b> {name}</p>
+        <p>
+            <b>Features classified to taxon:</b> {featureCount} ({featurePercent}%)
+        </p>
+        <p>
+            <b>Features classified to subtree:</b> {subtreeCount} ({subtreePercent}%)
+        </p>
     {/if}
-</div>
+</ControlContainer>
 
 <style>
-    #container {
-        width: 100%;
-        height: 32%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: center;
-    }
-    h1 {
-        margin: 0;
-        padding: 0;
-        font-size: 16px;
-    }
-    #search-bar {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-    }
-    input {
-        width: 75%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-    }
-    p {
-        margin: 0;
-        padding: 0;
-        padding-right: 3%;
-        padding-left: 3%;
-    }
     #search-error {
         background-color: #fca9a9;
         border-radius: 5px;

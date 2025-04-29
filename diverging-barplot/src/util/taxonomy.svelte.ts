@@ -58,7 +58,7 @@ export class TaxonomyPlot {
         const { width: svgWidth, height: svgHeight } = this.getSvgDimensions();
 
         const taxonomyDepth = this.root.height;
-        const nodeWidth = svgWidth / (taxonomyDepth + 1);
+        const nodeWidth = 225;
         const nodeHeight = 30;
 
         const dimensions: PlotDimensions = {

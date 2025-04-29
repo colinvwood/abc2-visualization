@@ -2,6 +2,7 @@
     import { slide } from "svelte/transition";
     import features from "../util/features";
     import plot from "../util/plot";
+    import ControlContainer from "./ControlContainer.svelte";
 
     const { taxonomyPlot, taxonomyFilters } = $props();
 
@@ -56,56 +57,39 @@
     }
 </script>
 
-<div id="container">
-    <h1>Filter Taxonomy by Feature Count</h1>
-    <div>
-        <label for="filter-value">Value:</label>
-        <input
-            type="text"
-            id="filter-value"
-            name="value"
-            bind:value={filterInfo.value}
-        />
+<ControlContainer title='Filter Taxonomy by Feature:'>
+    <div class="grid grid-cols-[auto_1fr] gap-4">
+        <div class='grid grid-cols-subgrid col-span-2'>
+            <label for="filter-value">Value:</label>
+            <input
+                type="text"
+                id="filter-value"
+                name="value"
+                class='bg-white border-gray-300 border rounded px-2 py-1 grow col-start-2 w-full'
+                bind:value={filterInfo.value}
+            />
+        </div>
+        <div class='grid grid-cols-subgrid col-span-2'>
+            <label for="filter-percent">Percentage:</label>
+            <input
+                type="text"
+                id="filter-percent"
+                name="filter-percent"
+                class='bg-white border-gray-300 border rounded px-2 py-1 grow col-start-2 w-full'
+                bind:value={filterInfo.percent}
+            />
+        </div>
+        <button onclick={handleFilter} class='col-span-2 w-min'>Apply</button>
     </div>
-    <div>
-        <label for="filter-percent">Percentage:</label>
-        <input
-            type="text"
-            id="filter-percent"
-            name="filter-percent"
-            bind:value={filterInfo.percent}
-        />
-    </div>
-    <button onclick={handleFilter}>Apply</button>
 
     {#if errorMessage != ""}
         <div id="error-message" transition:slide>
             <p>{errorMessage}</p>
         </div>
     {/if}
-</div>
+</ControlContainer>
 
 <style>
-    #container {
-        width: 100%;
-        height: 32%;
-        border: 2px solid lightgray;
-        border-radius: 5px;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: center;
-    }
-    h1 {
-        margin: 0;
-        padding: 0;
-        font-size: 16px;
-    }
-    input {
-        border: 2px solid lightgray;
-        border-radius: 5px;
-    }
     #error-message {
         background-color: #fca9a9;
         border-radius: 5px;
